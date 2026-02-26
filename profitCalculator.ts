@@ -11,6 +11,26 @@ import {
     getExchangeRate
 } from './dbService';
 
+/**
+ * Amazonはカテゴリによって手数料率が異なるため、商品カテゴリで動的に決定する。
+ * 参考: https://sell.amazon.com/fees (2024年時点)
+ */
+export function getAmazonFeePercentage(category?: string): number {
+    if (!category) return 0.15;
+    const cat = category.toLowerCase();
+    if (cat.includes('electronics') || cat.includes('電子') || cat.includes('camera')) return 0.08;
+    if (cat.includes('jewelry') || cat.includes('ジュエリー') || cat.includes('宝飾')) return 0.20;
+    if (cat.includes('shoes') || cat.includes('靴') || cat.includes('footwear')) return 0.15;
+    if (cat.includes('clothing') || cat.includes('apparel') || cat.includes('fashion') ||
+        cat.includes('衣類') || cat.includes('アパレル') || cat.includes('ファッション')) return 0.17;
+    if (cat.includes('book') || cat.includes('本') || cat.includes('書籍')) return 0.15;
+    if (cat.includes('beauty') || cat.includes('美容') || cat.includes('cosmetic')) return 0.08;
+    if (cat.includes('sports') || cat.includes('スポーツ') || cat.includes('outdoor')) return 0.15;
+    if (cat.includes('toy') || cat.includes('おもちゃ') || cat.includes('game') || cat.includes('ゲーム')) return 0.15;
+    if (cat.includes('watch') || cat.includes('時計')) return 0.16;
+    return 0.15; // デフォルト
+}
+
 export async function calculateProfit(
     input: ProfitCalculationInput
 ): Promise<CalculatedProfitDetails> {
@@ -80,13 +100,20 @@ export async function calculateProfit(
     );
 
     // --- 6. Calculate Platform Fees ---
-    const domesticPlatformDetails = await getPlatform(domesticPlatform);
-    if (!domesticPlatformDetails) {
-        throw new ProfitCalculationError(`Domestic platform ${domesticPlatform} not found in DB.`);
-    }
-    const domesticPlatformFeeJPY = domesticPurchasePriceJPY * domesticPlatformDetails.base_fee_percentage;
+    // 国内プラットフォームでは「買い手」として仕入れるため手数料は発生しない。
+    // 手数料は出品者（売り手）側が負担するものであり、仕入れ価格にすでに反映済み。
+    await getPlatform(domesticPlatform); // 存在確認のみ
+    const domesticPlatformFeeJPY = 0;
 
-    const overseasPlatformFeeJPY = overseasSellingPriceJPY * overseasPlatformDetails.base_fee_percentage;
+    // 海外プラットフォーム手数料: 料率 × 売価 + 固定手数料（eBay $0.30/件など）
+    let overseasFeePercentage = overseasPlatformDetails.base_fee_percentage;
+    if (overseasPlatform === 'Amazon') {
+        // Amazonはカテゴリ依存のため商品カテゴリで上書き
+        overseasFeePercentage = getAmazonFeePercentage(product.category);
+    }
+    const overseasPercentageFeeJPY = overseasSellingPriceJPY * overseasFeePercentage;
+    const overseasFixedFeeJPY = (overseasPlatformDetails.fixed_fee_local_currency ?? 0) * exchangeRate;
+    const overseasPlatformFeeJPY = overseasPercentageFeeJPY + overseasFixedFeeJPY;
 
     // --- 7. Calculate Customs Duty ---
     const usdToJpyRate = await getExchangeRate('USD', 'JPY');

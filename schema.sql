@@ -185,6 +185,9 @@ CREATE INDEX IF NOT EXISTS idx_notification_logs_platform ON notification_logs (
 -- ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE notification_logs ENABLE ROW LEVEL SECURITY;
 
+-- Add fixed_fee_local_currency column to platforms (eBay $0.30/取引など)
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS fixed_fee_local_currency DECIMAL(10, 2) DEFAULT 0;
+
 -- Add analysis result columns to market_prices
 ALTER TABLE market_prices ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE market_prices ADD COLUMN IF NOT EXISTS optimized_english_description TEXT;
@@ -207,17 +210,21 @@ VALUES
 ON CONFLICT (sku) DO NOTHING;
 
 -- Platforms
-INSERT INTO platforms (name, base_fee_percentage, currency)
+-- fixed_fee_local_currency: プラットフォーム通貨での1取引あたり固定手数料 (例: eBay $0.30)
+INSERT INTO platforms (name, base_fee_percentage, currency, fixed_fee_local_currency)
 VALUES
-    ('Mercari', 0.1000, 'JPY'),
-    ('Yahoo Auctions', 0.0880, 'JPY'),
-    ('eBay', 0.1290, 'USD'),
-    ('StockX', 0.1000, 'USD'),
-    ('Rakuma', 0.0660, 'JPY'),
-    ('PayPayフリマ', 0.0500, 'JPY'),
-    ('Mercari US', 0.1000, 'USD'),
-    ('Amazon', 0.1500, 'USD')
-ON CONFLICT (name) DO NOTHING;
+    ('Mercari',        0.1000, 'JPY', 0.00),
+    ('Yahoo Auctions', 0.0880, 'JPY', 0.00),
+    ('eBay',           0.1290, 'USD', 0.30),  -- 12.9% + $0.30/件 (Managed Payments)
+    ('StockX',         0.1200, 'USD', 0.00),  -- 取引手数料9% + 決済手数料3% = 12%
+    ('Rakuma',         0.0660, 'JPY', 0.00),
+    ('PayPayフリマ',   0.0500, 'JPY', 0.00),
+    ('Mercari US',     0.1000, 'USD', 0.00),
+    ('Amazon',         0.1500, 'USD', 0.00)   -- カテゴリ依存(8〜45%)、コードで上書き
+ON CONFLICT (name) DO UPDATE SET
+    base_fee_percentage      = EXCLUDED.base_fee_percentage,
+    fixed_fee_local_currency = EXCLUDED.fixed_fee_local_currency,
+    updated_at               = NOW();
 
 -- Exchange Rates
 INSERT INTO exchange_rates (from_currency, to_currency, rate)
@@ -261,8 +268,12 @@ INSERT INTO shipping_rates (shipping_zone_id, min_weight_kg, max_weight_kg, cost
 SELECT z.id, 2.0, NULL, 8500 FROM shipping_zones z WHERE z.name = 'Europe' AND NOT EXISTS (SELECT 1 FROM shipping_rates sr WHERE sr.shipping_zone_id = z.id AND sr.min_weight_kg = 2.0);
 
 -- Customs Duties
+-- US de minimis (Section 321): $800以下は免税。min_value_usd=800 で閾値を設定。
 INSERT INTO customs_duties (hs_code_prefix, country_code, duty_percentage, min_value_usd)
 VALUES
-    ('8517', 'US', 0.0250, 100),
-    ('6109', 'US', 0.1600, 50)
-ON CONFLICT (hs_code_prefix, country_code) DO NOTHING;
+    ('8517', 'US', 0.0250, 800),  -- 電子機器: $800超で2.5%
+    ('6109', 'US', 0.1600, 800)   -- アパレル: $800超で16%
+ON CONFLICT (hs_code_prefix, country_code) DO UPDATE SET
+    duty_percentage = EXCLUDED.duty_percentage,
+    min_value_usd   = EXCLUDED.min_value_usd,
+    updated_at      = NOW();

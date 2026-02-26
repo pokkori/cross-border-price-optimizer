@@ -20,6 +20,7 @@ export interface Platform {
     id: string; // UUID
     name: string; // e.g., 'Mercari', 'eBay'
     base_fee_percentage: number; // e.g., 0.10 for 10%
+    fixed_fee_local_currency: number; // 1取引あたり固定手数料（プラットフォーム通貨）例: eBay $0.30
     currency: string; // e.g., 'JPY', 'USD'
     created_at: string;
     updated_at: string;

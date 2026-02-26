@@ -7,7 +7,7 @@ import {
     CalculatedProfitDetails,
     Product
 } from './types';
-import { calculateProfit } from './profitCalculator';
+import { calculateProfit, getAmazonFeePercentage } from './profitCalculator';
 import { getProductBySku, getExchangeRate, getPlatform, getCustomsDuty, getShippingCost } from './dbService';
 
 /**
@@ -59,18 +59,29 @@ export async function calculateMinSellingPrice(
     // 1. 固定コストの計算 (販売価格に依存しないものをDB直接取得)
     const internationalShippingCostJPY = await getShippingCost(product.weight_kg!, destinationCountryCode);
 
-    const domesticPlatformDetails = await getPlatform(domesticPlatform);
-    const domesticFeeRate = domesticPlatformDetails?.base_fee_percentage ?? 0.10;
-    const domesticPlatformFeeJPY = domesticPurchasePriceJPY * domesticFeeRate;
-
-    // 固定費 = 仕入価格 + 国際送料 + 国内手数料
-    const fixedCostsJPY = domesticPurchasePriceJPY +
-        internationalShippingCostJPY +
-        domesticPlatformFeeJPY;
+    // 国内プラットフォームでは買い手として仕入れるため手数料は発生しない
+    const domesticPlatformFeeJPY = 0;
 
     // 2. 変動率の取得 (海外プラットフォーム手数料率 + 関税率をDBから動的取得)
     const overseasPlatformDetails = await getPlatform(targetOverseasPlatform);
-    const overseasFeeRate = overseasPlatformDetails?.base_fee_percentage ?? 0.1325;
+
+    // 海外手数料率: Amazonはカテゴリ依存、それ以外はDBから取得
+    let overseasFeeRate = overseasPlatformDetails?.base_fee_percentage ?? 0.1290;
+    if (targetOverseasPlatform === 'Amazon') {
+        overseasFeeRate = getAmazonFeePercentage(product.category);
+    }
+
+    // eBayなど固定手数料がある場合はJPY換算して固定費に加算
+    const jpyToOverseasRateForFixed = await getExchangeRate('JPY', overseasPlatformDetails?.currency ?? 'USD');
+    const overseasToJpyRate = jpyToOverseasRateForFixed && jpyToOverseasRateForFixed.rate > 0
+        ? 1 / jpyToOverseasRateForFixed.rate : 149;
+    const fixedFeeJPY = (overseasPlatformDetails?.fixed_fee_local_currency ?? 0) * overseasToJpyRate;
+
+    // 固定費 = 仕入価格 + 国際送料 + 海外プラットフォーム固定手数料
+    const fixedCostsJPY = domesticPurchasePriceJPY +
+        internationalShippingCostJPY +
+        domesticPlatformFeeJPY +
+        fixedFeeJPY;
 
     // 関税率はDBから動的取得（循環依存回避のため国内仕入価格をUSD換算して使用）
     const jpyToUsdRate = await getExchangeRate('JPY', 'USD');
