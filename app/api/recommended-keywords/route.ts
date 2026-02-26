@@ -29,13 +29,18 @@ const CANDIDATE_KEYWORDS = [
     'ワンピース',
 ];
 
-/** 簡易利益試算: 海外売上(JPY) - 国内仕入(JPY) - 海外手数料 - 送料。利益がこの値以上ならおすすめに載せる */
+/** 簡易利益試算: 海外売上(JPY) - 国内仕入(JPY) - 海外手数料 - 送料 - 関税概算。利益がこの値以上ならおすすめに載せる */
 const MIN_PROFIT_JPY = 1100;
 const ROUGH_SHIPPING_JPY = 3500;
-const OVERSEAS_FEE_RATE_EBAY = 0.13;
-const OVERSEAS_FEE_RATE_AMAZON = 0.15;
-const OVERSEAS_FEE_RATE_STOCKX = 0.10;
-const OVERSEAS_FEE_RATE_MERCARI_US = 0.10;
+// 実際の手数料率に合わせた定数（profitCalculator.ts の値と統一）
+const OVERSEAS_FEE_RATE_EBAY = 0.1290;       // 12.9%
+const EBAY_FIXED_FEE_USD = 0.30;             // $0.30/件固定
+const OVERSEAS_FEE_RATE_AMAZON = 0.15;       // 15%（カテゴリ不明のためデフォルト）
+const OVERSEAS_FEE_RATE_STOCKX = 0.12;       // 12%（取引9%+決済3%）
+const OVERSEAS_FEE_RATE_MERCARI_US = 0.10;   // 10%
+// US向け関税概算: de minimis $800超の場合のみ適用（平均的な関税率5%を概算）
+const US_CUSTOMS_RATE_APPROX = 0.05;
+const US_DEMINIMIS_USD = 800;
 
 interface RecommendedProduct {
     keyword: string;
@@ -293,18 +298,23 @@ export async function GET() {
                     let bestOverseasSearchUrl = ebaySearchUrl;
 
                     // 海外4プラットフォームの利益比較
+                    // fixedFeeUsd: 1取引あたりの固定手数料 (eBay $0.30など)
                     const overseasCandidates = [
-                        { platform: 'eBay', price: midEbayUsd, feeRate: OVERSEAS_FEE_RATE_EBAY, ds: ebayResult.dataSource, url: ebaySearchUrl },
-                        { platform: 'Amazon', price: midAmazonUsd, feeRate: OVERSEAS_FEE_RATE_AMAZON, ds: amazonResult.dataSource, url: amazonSearchUrl },
-                        { platform: 'StockX', price: midStockXUsd, feeRate: OVERSEAS_FEE_RATE_STOCKX, ds: stockxResult.dataSource, url: stockxSearchUrl },
-                        { platform: 'Mercari US', price: midMercariUsUsd, feeRate: OVERSEAS_FEE_RATE_MERCARI_US, ds: mercariUsResult.dataSource, url: mercariUsSearchUrl },
+                        { platform: 'eBay', price: midEbayUsd, feeRate: OVERSEAS_FEE_RATE_EBAY, fixedFeeUsd: EBAY_FIXED_FEE_USD, ds: ebayResult.dataSource, url: ebaySearchUrl },
+                        { platform: 'Amazon', price: midAmazonUsd, feeRate: OVERSEAS_FEE_RATE_AMAZON, fixedFeeUsd: 0, ds: amazonResult.dataSource, url: amazonSearchUrl },
+                        { platform: 'StockX', price: midStockXUsd, feeRate: OVERSEAS_FEE_RATE_STOCKX, fixedFeeUsd: 0, ds: stockxResult.dataSource, url: stockxSearchUrl },
+                        { platform: 'Mercari US', price: midMercariUsUsd, feeRate: OVERSEAS_FEE_RATE_MERCARI_US, fixedFeeUsd: 0, ds: mercariUsResult.dataSource, url: mercariUsSearchUrl },
                     ];
 
                     for (const candidate of overseasCandidates) {
                         if (candidate.price > 0) {
                             const revenueJpy = candidate.price * jpyPerUsd;
-                            const afterFee = revenueJpy * (1 - candidate.feeRate);
-                            const profit = afterFee - listing.price - ROUGH_SHIPPING_JPY;
+                            // 手数料（料率 + 固定費）
+                            const platformFeeJpy = revenueJpy * candidate.feeRate + candidate.fixedFeeUsd * jpyPerUsd;
+                            // 関税概算: de minimis $800超の場合のみ適用（US向け）
+                            const customsJpy = candidate.price > US_DEMINIMIS_USD
+                                ? revenueJpy * US_CUSTOMS_RATE_APPROX : 0;
+                            const profit = revenueJpy - platformFeeJpy - listing.price - ROUGH_SHIPPING_JPY - customsJpy;
                             if (profit > bestProfit) {
                                 bestProfit = profit;
                                 bestOverseasPlatform = candidate.platform;
