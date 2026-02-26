@@ -181,9 +181,41 @@ CREATE INDEX IF NOT EXISTS idx_notification_logs_product_sku ON notification_log
 CREATE INDEX IF NOT EXISTS idx_notification_logs_timestamp ON notification_logs (timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_notification_logs_platform ON notification_logs (platform);
 
--- RLS for new tables if needed
--- ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE notification_logs ENABLE ROW LEVEL SECURITY;
+-- ============================================================
+-- Row Level Security (RLS) 設定
+-- ============================================================
+-- アプリはサーバーサイドAPIルート経由でのみDBにアクセスする設計。
+-- SUPABASE_SERVICE_ROLE_KEY を使用する場合は RLS をバイパスするため、
+-- 以下のポリシーは anon キーによる直接アクセスの制限として機能する。
+--
+-- ⚠️ 実行方法: Supabase ダッシュボード > SQL Editor で手動実行する。
+--    schema.sql の全実行ではなく、この RLS セクションだけを実行すること。
+-- ============================================================
+
+-- RLS を有効化
+ALTER TABLE products              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE platforms             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exchange_rates        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shipping_zones        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shipping_rates        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customs_duties        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE market_prices         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_logs         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_logs     ENABLE ROW LEVEL SECURITY;
+
+-- 参照系テーブル: anon は読み取りのみ許可
+-- （SUPABASE_SERVICE_ROLE_KEY 使用時は RLS をバイパスするため書き込みも可能）
+CREATE POLICY IF NOT EXISTS "anon_read_products"         ON products         FOR SELECT TO anon USING (true);
+CREATE POLICY IF NOT EXISTS "anon_read_platforms"        ON platforms        FOR SELECT TO anon USING (true);
+CREATE POLICY IF NOT EXISTS "anon_read_exchange_rates"   ON exchange_rates   FOR SELECT TO anon USING (true);
+CREATE POLICY IF NOT EXISTS "anon_read_shipping_zones"   ON shipping_zones   FOR SELECT TO anon USING (true);
+CREATE POLICY IF NOT EXISTS "anon_read_shipping_rates"   ON shipping_rates   FOR SELECT TO anon USING (true);
+CREATE POLICY IF NOT EXISTS "anon_read_customs_duties"   ON customs_duties   FOR SELECT TO anon USING (true);
+
+-- 書き込み系テーブル: anon は読み取りのみ（書き込みは Service Role 経由のみ）
+CREATE POLICY IF NOT EXISTS "anon_read_market_prices"    ON market_prices    FOR SELECT TO anon USING (true);
+CREATE POLICY IF NOT EXISTS "anon_read_activity_logs"   ON activity_logs    FOR SELECT TO anon USING (true);
+CREATE POLICY IF NOT EXISTS "anon_read_notification_logs" ON notification_logs FOR SELECT TO anon USING (true);
 
 -- Add fixed_fee_local_currency column to platforms (eBay $0.30/取引など)
 ALTER TABLE platforms ADD COLUMN IF NOT EXISTS fixed_fee_local_currency DECIMAL(10, 2) DEFAULT 0;
