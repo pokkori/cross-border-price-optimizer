@@ -13,6 +13,67 @@ import {
 } from './types';
 import { supabase } from './supabaseClient';
 
+// --- Live Exchange Rate Cache ---
+// サーバープロセス内で5分間キャッシュし、APIへの過剰アクセスを防ぐ
+const RATE_CACHE_TTL_MS = 5 * 60 * 1000;
+let _rateCache: { usdJpy: number; fetchedAt: number } | null = null;
+
+/**
+ * open.er-api.com からリアルタイムUSD/JPYレートを取得し、DBを更新する。
+ * 失敗時は 0 を返す（呼び出し元がDBフォールバックを担う）。
+ * サーバー内で5分間メモリキャッシュするため余計なAPIコールを避ける。
+ */
+async function fetchLiveUsdJpyRate(): Promise<number> {
+    if (_rateCache && Date.now() - _rateCache.fetchedAt < RATE_CACHE_TTL_MS) {
+        return _rateCache.usdJpy;
+    }
+    try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD', {
+            signal: AbortSignal.timeout(5000),
+        });
+        if (res.ok) {
+            const data = await res.json() as { rates?: { JPY?: number } };
+            if (data.rates?.JPY && data.rates.JPY > 0) {
+                const rate = Math.round(data.rates.JPY * 100) / 100;
+                _rateCache = { usdJpy: rate, fetchedAt: Date.now() };
+                // DBにも保存（失敗しても続行）
+                try {
+                    await supabase.from('exchange_rates').upsert([
+                        { from_currency: 'USD', to_currency: 'JPY', rate, updated_at: new Date().toISOString() },
+                        { from_currency: 'JPY', to_currency: 'USD', rate: Math.round((1 / rate) * 100000000) / 100000000, updated_at: new Date().toISOString() },
+                    ], { onConflict: 'from_currency,to_currency' });
+                } catch { /* DB更新失敗は無視 */ }
+                console.log(`[dbService] Live exchange rate fetched: 1 USD = ${rate} JPY`);
+                return rate;
+            }
+        }
+    } catch (e) {
+        console.warn('[dbService] Live exchange rate fetch failed:', e instanceof Error ? e.message : e);
+    }
+    return 0;
+}
+
+/**
+ * リアルタイム為替レート取得（3段フォールバック）
+ * 1. ライブAPI (open.er-api.com) ← 5分キャッシュ
+ * 2. Supabase DB（前回取得値）
+ * 3. null（呼び出し元でエラーハンドリング）
+ *
+ * 対応ペア: USD↔JPY はライブ取得。その他はDBのみ。
+ */
+export async function getExchangeRateLive(from: string, to: string): Promise<ExchangeRate | null> {
+    // USD↔JPY はライブ取得を試みる
+    if ((from === 'USD' && to === 'JPY') || (from === 'JPY' && to === 'USD')) {
+        const liveUsdJpy = await fetchLiveUsdJpyRate();
+        if (liveUsdJpy > 0) {
+            const rate = from === 'USD' ? liveUsdJpy : Math.round((1 / liveUsdJpy) * 100000000) / 100000000;
+            return { id: '', from_currency: from, to_currency: to, rate, created_at: '', updated_at: new Date().toISOString() };
+        }
+    }
+    // ライブ取得失敗 or 他の通貨ペア → DBから取得
+    return getExchangeRate(from, to);
+}
+
 // --- Database Service Functions ---
 
 export async function getProductBySku(sku: string): Promise<Product | null> {

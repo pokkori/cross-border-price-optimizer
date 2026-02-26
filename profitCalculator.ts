@@ -8,7 +8,7 @@ import {
     getPlatform,
     getShippingCost,
     getCustomsDuty,
-    getExchangeRate
+    getExchangeRateLive
 } from './dbService';
 
 /**
@@ -83,7 +83,7 @@ export async function calculateProfit(
     if (overseasPlatformCurrency === 'JPY') {
         exchangeRate = 1;
     } else {
-        const fetchedRate = await getExchangeRate(overseasPlatformCurrency, 'JPY');
+        const fetchedRate = await getExchangeRateLive(overseasPlatformCurrency, 'JPY');
         if (!fetchedRate || fetchedRate.rate <= 0) {
             throw new ProfitCalculationError(
                 `Exchange rate from ${overseasPlatformCurrency} to JPY not found in DB.`
@@ -116,7 +116,7 @@ export async function calculateProfit(
     const overseasPlatformFeeJPY = overseasPercentageFeeJPY + overseasFixedFeeJPY;
 
     // --- 7. Calculate Customs Duty ---
-    const usdToJpyRate = await getExchangeRate('USD', 'JPY');
+    const usdToJpyRate = await getExchangeRateLive('USD', 'JPY');
     if (!usdToJpyRate || usdToJpyRate.rate <= 0) {
         throw new ProfitCalculationError("Exchange rate USD to JPY not available for customs duty calculation.");
     }

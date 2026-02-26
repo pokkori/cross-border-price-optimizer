@@ -8,7 +8,7 @@ import {
     Product
 } from './types';
 import { calculateProfit, getAmazonFeePercentage } from './profitCalculator';
-import { getProductBySku, getExchangeRate, getPlatform, getCustomsDuty, getShippingCost } from './dbService';
+import { getProductBySku, getExchangeRateLive, getPlatform, getCustomsDuty, getShippingCost } from './dbService';
 
 /**
  * Finds the lowest competitor price for a given target currency.
@@ -72,7 +72,7 @@ export async function calculateMinSellingPrice(
     }
 
     // eBayなど固定手数料がある場合はJPY換算して固定費に加算
-    const jpyToOverseasRateForFixed = await getExchangeRate('JPY', overseasPlatformDetails?.currency ?? 'USD');
+    const jpyToOverseasRateForFixed = await getExchangeRateLive('JPY', overseasPlatformDetails?.currency ?? 'USD');
     const overseasToJpyRate = jpyToOverseasRateForFixed && jpyToOverseasRateForFixed.rate > 0
         ? 1 / jpyToOverseasRateForFixed.rate : 149;
     const fixedFeeJPY = (overseasPlatformDetails?.fixed_fee_local_currency ?? 0) * overseasToJpyRate;
@@ -84,7 +84,7 @@ export async function calculateMinSellingPrice(
         fixedFeeJPY;
 
     // 関税率はDBから動的取得（循環依存回避のため国内仕入価格をUSD換算して使用）
-    const jpyToUsdRate = await getExchangeRate('JPY', 'USD');
+    const jpyToUsdRate = await getExchangeRateLive('JPY', 'USD');
     const estimatedValueUsd = domesticPurchasePriceJPY * (jpyToUsdRate?.rate ?? 0.0067);
     const estimatedDutyRate = product.hs_code
         ? await getCustomsDuty(product.hs_code, destinationCountryCode, estimatedValueUsd)
@@ -108,7 +108,7 @@ export async function calculateMinSellingPrice(
     // 4. 外貨換算（プラットフォーム通貨に基づき動的取得）
     const overseasPlatformInfo = await getPlatform(targetOverseasPlatform);
     const targetCurrency = overseasPlatformInfo?.currency ?? 'USD';
-    const jpyToOverseasRate = await getExchangeRate('JPY', targetCurrency);
+    const jpyToOverseasRate = await getExchangeRateLive('JPY', targetCurrency);
     if (!jpyToOverseasRate || jpyToOverseasRate.rate <= 0) {
         throw new ProfitCalculationError(`Exchange rate from JPY to ${targetCurrency} not found.`);
     }
