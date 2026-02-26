@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# next.js
+.next/
+out/
+
+# build
+dist/
+
+# misc
+*.tsbuildinfo
+next-env.d.ts
+
+# data (runtime generated)
+data/
+
+# logs and temp files
+*.log
+*.txt
+nul
+first_item.html
+live_mercari.html
+
+# cursor
+.cursor/

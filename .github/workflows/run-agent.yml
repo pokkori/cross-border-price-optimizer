@@ -1,0 +1,42 @@
+name: Run Arbitrage Agent Worker
+
+on:
+  schedule:
+    # Run once every hour
+    # For free tier, consider daily or less frequent runs depending on usage.
+    # Min frequency is 5 minutes, but hourly is a good start for free tier optimization.
+    # Check GitHub Actions limits: https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing
+    - cron: '0 * * * *' # "At 0 minutes past the hour, every hour"
+
+  workflow_dispatch: # Allows manual triggering of the workflow from GitHub UI
+
+jobs:
+  run_worker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Specify your Node.js version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run main_worker (ts-node)
+        run: npm run worker --
+        env:
+          SCRAPINGBEE_API_KEY: ${{ secrets.SCRAPINGBEE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          DASHBOARD_BASE_URL: ${{ secrets.DASHBOARD_BASE_URL }}
+
+      - name: Report failure (placeholder)
+        if: failure()
+        run: echo "Workflow failed! Send emergency notification here."
