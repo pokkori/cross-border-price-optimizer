@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * ダッシュボード全体をHTTP Basic認証で保護するミドルウェア。
+ * ダッシュボード全体をHTTP Basic認証で保護するProxy（旧: middleware）。
+ * Next.js 16 では middleware.ts → proxy.ts にリネーム、エクスポート名も proxy に変更。
  * DASHBOARD_PASSWORD 環境変数が設定されている場合のみ認証を要求する。
  * 未設定時はローカル開発環境向けにスルーする。
  *
  * 認証情報: ユーザー名は任意（空でも可）、パスワードは DASHBOARD_PASSWORD の値。
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const password = process.env.DASHBOARD_PASSWORD;
 
     // パスワード未設定 = 開発環境 → 認証スキップ
