@@ -782,7 +782,10 @@ export default function DashboardPage() {
 
                 {/* おすすめ商品セクション */}
                 <div className="mb-8">
-                    <p className="text-[10px] text-amber-400/80 mb-3">※おすすめの推定利益は簡易試算です（関税・手数料の一部未考慮）。実際の純利益は分析実行後の一覧で確認してください。</p>
+                    <p className="text-[10px] text-amber-400/80 mb-3">
+                        ⚠️ <strong>推定利益について</strong>: 同一キーワードの国内価格と海外相場の中央値を比較しています。<strong>表示されている国内商品と海外商品は同一商品とは限りません。</strong>
+                        必ずeBay等で「同じ商品」が実際にいくらで売れているか確認してから仕入れてください。価格差が8倍以上の組み合わせは自動除外しています。
+                    </p>
                     <div className="flex items-center gap-2 mb-4">
                         <svg className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                         <h2 className="text-sm font-black text-amber-300 uppercase tracking-wider">おすすめ商品</h2>

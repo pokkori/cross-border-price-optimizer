@@ -41,6 +41,16 @@ const OVERSEAS_FEE_RATE_MERCARI_US = 0.10;   // 10%
 // US向け関税概算: de minimis $800超の場合のみ適用（平均的な関税率5%を概算）
 const US_CUSTOMS_RATE_APPROX = 0.05;
 const US_DEMINIMIS_USD = 800;
+/**
+ * 価格乖離チェック用しきい値。
+ * 海外中央値(JPY) が 国内仕入価格 × この倍率 を超える場合は「別商品比較」の
+ * 可能性が高いとみなし除外する。
+ * 例: 国内¥300 vs 海外$150(¥22,350) → 74.5倍 → 除外
+ *     国内¥5,000 vs 海外$50(¥7,450)  → 1.49倍 → 掲載
+ */
+const MAX_OVERSEAS_TO_DOMESTIC_RATIO = 8;
+/** 国内仕入価格がこの金額未満の商品は除外（海外相場と全く異なる別カテゴリ品の混入を防ぐ） */
+const MIN_DOMESTIC_PRICE_JPY = 500;
 
 interface RecommendedProduct {
     keyword: string;
@@ -291,6 +301,9 @@ export async function GET() {
                 const keywordProducts: RecommendedProduct[] = [];
 
                 for (const listing of allDomesticListings) {
+                    // ¥500未満は海外相場と全く異なる商品の可能性が高いため除外
+                    if (listing.price < MIN_DOMESTIC_PRICE_JPY) continue;
+
                     let bestProfit = -Infinity;
                     let bestOverseasPlatform = 'eBay';
                     let bestOverseasPrice = midEbayUsd;
@@ -309,6 +322,9 @@ export async function GET() {
                     for (const candidate of overseasCandidates) {
                         if (candidate.price > 0) {
                             const revenueJpy = candidate.price * jpyPerUsd;
+                            // 価格乖離チェック: 海外価格が国内価格のMAX倍超 = 別商品比較の可能性が高い
+                            // 例: 国内¥300 vs 海外$150(¥22,350) → 74.5倍 → スキップ
+                            if (revenueJpy > listing.price * MAX_OVERSEAS_TO_DOMESTIC_RATIO) continue;
                             // 手数料（料率 + 固定費）
                             const platformFeeJpy = revenueJpy * candidate.feeRate + candidate.fixedFeeUsd * jpyPerUsd;
                             // 関税概算: de minimis $800超の場合のみ適用（US向け）
