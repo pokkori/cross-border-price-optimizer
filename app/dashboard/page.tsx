@@ -295,6 +295,9 @@ export default function DashboardPage() {
 
     const translateErrorMessage = (raw: string): string => {
         if (!raw) return "分析中にエラーが発生しました。時間をおいて再度お試しください。";
+        if (raw.includes('fetch failed') || raw.includes('Supabaseへの接続に失敗')) {
+            return "Supabaseへの接続に失敗しました。【対処法】Supabaseダッシュボード（https://app.supabase.com/）を開き、プロジェクトが一時停止していれば「Restore project」をクリックして復旧してください。無料プランは7日間アクセスがないと自動停止します。";
+        }
         if (raw.includes('Supabase') || raw.includes('NEXT_PUBLIC_SUPABASE_URL') || raw.includes('接続設定')) {
             return "Supabaseの接続設定に問題があります。Vercel の環境変数（SUPABASE_URL / SUPABASE_ANON_KEY）が正しく設定されているか確認してください。";
         }

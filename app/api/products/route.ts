@@ -18,8 +18,19 @@ export async function GET() {
             .order('updated_at', { ascending: false });
 
         if (error) {
-            console.error("Error fetching market prices from Supabase:", error.message);
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+            const cause = (error as any).cause;
+            console.error("Error fetching market prices from Supabase:", error.message, cause ? `cause: ${cause}` : '');
+
+            // "fetch failed" = ネットワーク到達不能（Supabase停止・URL誤り・接続エラー）
+            let userMessage = error.message;
+            if (error.message.includes('fetch failed') || error.message.includes('TypeError')) {
+                userMessage =
+                    'Supabaseへの接続に失敗しました。' +
+                    '【確認事項】①Supabaseダッシュボード(https://app.supabase.com/)でプロジェクトが一時停止していないか確認してください（無料プランは7日間無操作で自動停止します）。' +
+                    '②Vercelの環境変数 SUPABASE_URL / SUPABASE_ANON_KEY が正しく設定されているか確認してください。' +
+                    ` 技術的詳細: ${error.message}`;
+            }
+            return NextResponse.json({ success: false, error: userMessage }, { status: 500 });
         }
 
         // Map snake_case DB columns to camelCase for dashboard compatibility
