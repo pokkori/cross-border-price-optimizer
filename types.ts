@@ -262,3 +262,22 @@ export class ProfitCalculationError extends Error {
         this.name = "ProfitCalculationError";
     }
 }
+
+// --- 海外需要AI分析型 ---
+
+export type OverseasDemandCategory =
+    | 'フィルムカメラ' | 'レトロゲーム' | 'ウォークマン'
+    | 'ヴィンテージオーディオ' | '機械式時計' | 'アニメグッズ'
+    | '鉄道模型' | 'カメラレンズ' | 'アーケード基板' | '絶版プラモデル';
+
+export interface DemandAnalysisInput {
+    title: string;
+    price: number;  // JPY
+}
+
+export interface OverseasDemandAnalysis {
+    score: number;                        // 0-10
+    isInstantSellCandidate: boolean;      // score >= 7
+    demandCategory: OverseasDemandCategory | null;
+    reasoning: string;                    // 日本語1文、最大80文字
+}

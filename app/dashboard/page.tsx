@@ -87,6 +87,11 @@ interface RecommendedProduct {
     mercariUsPriceUsd?: number;
     mercariUsDataSource?: 'api' | 'scraped' | 'mock';
     mercariUsSearchUrl?: string;
+    // AI即売れ候補フィールド
+    demandScore?: number;
+    isInstantSellCandidate?: boolean;
+    demandCategory?: string | null;
+    demandReasoning?: string;
 }
 
 type AnalysisMode = 'casual' | 'professional';
@@ -129,6 +134,7 @@ export default function DashboardPage() {
     const [activityLogs, setActivityLogs] = useState<{ timestamp: string; workflow_name: string; status: string; message?: string; product_sku?: string }[]>([]);
     const [activityLogsLoading, setActivityLogsLoading] = useState(false);
     const [listingsPageSize, setListingsPageSize] = useState(30);
+    const [instantSellOnly, setInstantSellOnly] = useState(false);
 
     // ローカルストレージからタグ・メモ情報を読み込む
     const loadListingMeta = () => {
@@ -292,6 +298,12 @@ export default function DashboardPage() {
     const hiddenCount = useMemo(() => {
         return listings.length - filteredListings.length;
     }, [listings, filteredListings]);
+
+    // 即売れ候補フィルター
+    const filteredRecommendedProducts = useMemo(() => {
+        if (!instantSellOnly) return recommendedProducts;
+        return recommendedProducts.filter(p => p.isInstantSellCandidate === true);
+    }, [recommendedProducts, instantSellOnly]);
 
     const translateErrorMessage = (raw: string): string => {
         if (!raw) return "分析中にエラーが発生しました。時間をおいて再度お試しください。";
@@ -800,6 +812,23 @@ export default function DashboardPage() {
                                 1 USD = {exchangeRateInfo.rate.toFixed(1)} JPY {exchangeRateInfo.source === 'live' ? '(リアルタイム)' : exchangeRateInfo.source === 'database' ? '(DB)' : '(固定値)'}
                             </span>
                         )}
+                        <button
+                            type="button"
+                            onClick={() => setInstantSellOnly(prev => !prev)}
+                            className={`ml-2 flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border transition-all ${
+                                instantSellOnly
+                                    ? 'bg-orange-500/20 text-orange-300 border-orange-500/40'
+                                    : 'bg-slate-800/50 text-slate-400 border-slate-700/50 hover:text-orange-300'
+                            }`}
+                            title="海外コレクター需要が高く即売れしやすい商品のみ表示"
+                        >
+                            🔥 即売れ候補のみ
+                            {recommendedProducts.filter(p => p.isInstantSellCandidate).length > 0 && (
+                                <span className="ml-1 bg-orange-500 text-white rounded-full px-1.5 text-[8px]">
+                                    {recommendedProducts.filter(p => p.isInstantSellCandidate).length}
+                                </span>
+                            )}
+                        </button>
                     </div>
                     {recommendedKeywordsLoading ? (
                         <div className="flex items-center justify-center py-12 bg-slate-800/20 rounded-2xl border border-dashed border-slate-700">
@@ -808,12 +837,16 @@ export default function DashboardPage() {
                                 <span className="text-sm text-slate-400 font-bold">おすすめ商品を検索中...</span>
                             </div>
                         </div>
-                    ) : recommendedProducts.length > 0 ? (
+                    ) : filteredRecommendedProducts.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {recommendedProducts.map((product, idx) => (
+                            {filteredRecommendedProducts.map((product, idx) => (
                                 <div
                                     key={`${product.keyword}-${idx}`}
-                                    className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden hover:border-amber-500/40 hover:shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)] transition-all duration-300 flex flex-col"
+                                    className={`bg-slate-900/80 border rounded-xl overflow-hidden hover:shadow-[0_0_30px_-10px_rgba(245,158,11,0.2)] transition-all duration-300 flex flex-col ${
+                                        product.isInstantSellCandidate
+                                            ? 'border-orange-500/30 hover:border-orange-500/60'
+                                            : 'border-slate-800 hover:border-amber-500/40'
+                                    }`}
                                 >
                                     <div className="relative h-36 overflow-hidden bg-slate-800">
                                         <img
@@ -833,6 +866,18 @@ export default function DashboardPage() {
                                                 +¥{product.estimatedProfitJpy.toLocaleString()}
                                             </span>
                                         </div>
+                                        {product.isInstantSellCandidate && (
+                                            <div className="absolute bottom-2 left-2 flex items-center gap-1">
+                                                <span className="px-2 py-0.5 rounded-md text-[9px] font-black backdrop-blur-md bg-orange-500/30 text-orange-200 border border-orange-500/50">
+                                                    🔥 即売れ候補
+                                                </span>
+                                                {product.demandCategory && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-black bg-slate-900/70 text-slate-300 border border-slate-600/50 backdrop-blur-sm">
+                                                        {product.demandCategory}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="p-3 flex-1 flex flex-col">
                                         <h4 className="text-xs font-bold text-slate-200 line-clamp-2 mb-2 leading-snug">
@@ -865,6 +910,26 @@ export default function DashboardPage() {
                                                 <span className="text-emerald-400 font-bold">{(product.profitMarginPercent * 100).toFixed(1)}%</span>
                                             </div>
                                         </div>
+                                        {(product.demandScore ?? 0) > 0 && (
+                                            <div className="flex items-center gap-1.5 mb-2 text-[10px]" title={product.demandReasoning ?? ''}>
+                                                <span className="text-slate-500">海外需要:</span>
+                                                {[1,2,3,4,5].map(s => (
+                                                    <span key={s} className={s <= Math.round((product.demandScore ?? 0) / 2)
+                                                        ? 'text-orange-400' : 'text-slate-700'}>★</span>
+                                                ))}
+                                                <span className={`font-bold ${
+                                                    (product.demandScore ?? 0) >= 7 ? 'text-orange-400' :
+                                                    (product.demandScore ?? 0) >= 5 ? 'text-amber-400' : 'text-slate-500'}`}>
+                                                    {product.demandScore}/10
+                                                </span>
+                                                {product.demandReasoning && (
+                                                    <span className="text-slate-600 text-[8px] truncate max-w-[90px] cursor-help"
+                                                        title={product.demandReasoning}>
+                                                        {product.demandReasoning}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                         <div className="flex flex-wrap items-center gap-1.5 mb-3">
                                             {/* 仕入先データソース */}
                                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-black border ${

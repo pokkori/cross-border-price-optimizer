@@ -9,6 +9,8 @@ import { fetchAmazonPricesWithSource } from '@/amazonScraper';
 import { fetchStockXPricesWithSource } from '@/stockxScraper';
 import { fetchMercariUsPricesWithSource } from '@/mercariUsScraper';
 import type { DataSource } from '@/types';
+import { analyzeOverseasDemandBatch } from '@/geminiService';
+import type { DemandAnalysisInput, OverseasDemandAnalysis } from '@/types';
 
 export const runtime = 'nodejs';
 
@@ -51,6 +53,40 @@ const US_DEMINIMIS_USD = 800;
 const MAX_OVERSEAS_TO_DOMESTIC_RATIO = 8;
 /** 国内仕入価格がこの金額未満の商品は除外（海外相場と全く異なる別カテゴリ品の混入を防ぐ） */
 const MIN_DOMESTIC_PRICE_JPY = 500;
+
+/** 海外コレクター需要が高いカテゴリのキーワード（AIプリフィルタ用） */
+const OVERSEAS_DEMAND_KEYWORDS: readonly string[] = [
+    // フィルムカメラ
+    'フィルムカメラ','フィルム一眼','レンジファインダー','オリンパス','ミノルタ','コニカ',
+    'ヤシカ','ペンタックス','ライカ','コンタックス','ローライ','ハッセルブラッド',
+    // レトロゲーム
+    'ファミコン','スーパーファミコン','ゲームボーイ','ゲームボーイアドバンス',
+    'PCエンジン','メガドライブ','ネオジオ','セガサターン','ドリームキャスト',
+    'レトロゲーム','ゲームカセット','ファミリーコンピュータ',
+    // ウォークマン
+    'ウォークマン','Walkman','カセットプレーヤー','カセットデッキ','ポータブルカセット',
+    // ヴィンテージオーディオ
+    'ターンテーブル','レコードプレーヤー','オープンリール','アナログアンプ',
+    'パイオニア','ケンウッド','サンスイ','マランツ',
+    // 機械式時計
+    '機械式','自動巻き','手巻き','ヴィンテージ時計','アンティーク時計',
+    // アニメ・漫画
+    '初版','絶版','レア','フィギュア','限定',
+    // 鉄道模型
+    'Nゲージ','HOゲージ','鉄道模型','KATO','TOMIX',
+    // カメラレンズ
+    'オールドレンズ','M42','タクマー','ニッコール',
+    // アーケード基板
+    '基板','アーケード','JAMMA',
+    // プラモデル
+    'プラモデル','ガンプラ','スケールモデル',
+    // 汎用
+    'ジャンク',
+];
+
+function passesOverseasDemandPreFilter(title: string): boolean {
+    return OVERSEAS_DEMAND_KEYWORDS.some(kw => title.includes(kw));
+}
 
 interface RecommendedProduct {
     keyword: string;
@@ -102,6 +138,11 @@ interface RecommendedProduct {
     mercariUsPriceUsd?: number;
     mercariUsDataSource?: DataSource;
     mercariUsSearchUrl?: string;
+    // AI即売れ候補フィールド
+    demandScore?: number;
+    isInstantSellCandidate?: boolean;
+    demandCategory?: string | null;
+    demandReasoning?: string;
 }
 
 let cached: { keywords: string[]; products: RecommendedProduct[]; at: number; exchangeRate: number; exchangeRateSource: string } | null = null;
@@ -413,8 +454,47 @@ export async function GET() {
             }
         }
 
-        // 全体を利益額の高い順にソートして上限を適用
+        // 1次ソート: 利益額順
         allProducts.sort((a, b) => b.estimatedProfitJpy - a.estimatedProfitJpy);
+
+        // AIバッチ需要分析（キーワードプリフィルタ後に1回だけ呼ぶ）
+        try {
+            const candidateIndexes: number[] = [];
+            const demandInputs: DemandAnalysisInput[] = [];
+            allProducts.forEach((p, i) => {
+                if (passesOverseasDemandPreFilter(p.title)) {
+                    candidateIndexes.push(i);
+                    demandInputs.push({ title: p.title, price: p.domesticPrice });
+                }
+            });
+
+            if (demandInputs.length > 0) {
+                const capped = demandInputs.slice(0, 20);
+                const cappedIdx = candidateIndexes.slice(0, 20);
+                const results: OverseasDemandAnalysis[] = await analyzeOverseasDemandBatch(capped);
+                cappedIdx.forEach((pi, ri) => {
+                    const r = results[ri];
+                    if (!r) return;
+                    allProducts[pi].demandScore = r.score;
+                    allProducts[pi].isInstantSellCandidate = r.isInstantSellCandidate;
+                    allProducts[pi].demandCategory = r.demandCategory;
+                    allProducts[pi].demandReasoning = r.reasoning;
+                });
+
+                // 2次ソート: 即売れ候補を上位グループへ、グループ内は複合スコア順
+                // combinedScore = profit + demandScore * 500 (score=10 → +5000JPY相当のブースト)
+                allProducts.sort((a, b) => {
+                    const ac = a.isInstantSellCandidate ? 1 : 0;
+                    const bc = b.isInstantSellCandidate ? 1 : 0;
+                    if (bc !== ac) return bc - ac;
+                    return (b.estimatedProfitJpy + (b.demandScore ?? 0) * 500)
+                         - (a.estimatedProfitJpy + (a.demandScore ?? 0) * 500);
+                });
+            }
+        } catch (e) {
+            console.warn('[recommended-keywords] 需要分析スキップ:', e instanceof Error ? e.message : e);
+        }
+
         const finalProducts = allProducts.slice(0, MAX_PRODUCTS_TOTAL);
 
         let keywords = profitable.slice(0, MAX_KEYWORDS);
