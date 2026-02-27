@@ -203,7 +203,8 @@ export default function DashboardPage() {
             }
         } catch (e) {
             console.error(e);
-            setError("データの読み込みに失敗しました。");
+            const msg = e instanceof Error ? e.message : 'データの読み込みに失敗しました。';
+            setError(translateErrorMessage(msg));
         } finally {
             setLoading(false);
         }
@@ -294,8 +295,17 @@ export default function DashboardPage() {
 
     const translateErrorMessage = (raw: string): string => {
         if (!raw) return "分析中にエラーが発生しました。時間をおいて再度お試しください。";
-        if (raw.includes('Supabase') || raw.includes('NEXT_PUBLIC_SUPABASE_URL')) {
-            return "Supabaseの接続設定に問題があります。.env.local に NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY が正しく設定されているか確認し、サーバーを再起動してください。";
+        if (raw.includes('Supabase') || raw.includes('NEXT_PUBLIC_SUPABASE_URL') || raw.includes('接続設定')) {
+            return "Supabaseの接続設定に問題があります。Vercel の環境変数（SUPABASE_URL / SUPABASE_ANON_KEY）が正しく設定されているか確認してください。";
+        }
+        if (raw.includes('relation') && raw.includes('does not exist')) {
+            return "データベースのテーブルが存在しません。Supabase ダッシュボードの SQL Editor で schema.sql を実行してテーブルを作成してください。";
+        }
+        if (raw.includes('permission denied') || raw.includes('row-level security')) {
+            return "データベースのアクセス権限エラーです。Vercel の環境変数に SUPABASE_SERVICE_ROLE_KEY を設定するか、Supabase の RLS ポリシーを確認してください。";
+        }
+        if (raw.includes('Failed to read data') || raw.includes('Failed to fetch')) {
+            return "APIサーバーへの接続に失敗しました。Vercel のデプロイ状態と環境変数（SUPABASE_URL / SUPABASE_ANON_KEY）を確認してください。";
         }
         if (raw.includes('Product with SKU') && raw.includes('not found')) {
             return "指定されたSKUの商品がDBに見つかりません。まず Supabase の products テーブルに商品情報を登録してください。";
@@ -304,7 +314,7 @@ export default function DashboardPage() {
             return "商品に重量またはHSコードが設定されていないため、利益計算ができません。products テーブルの weight_kg / hs_code を設定してください。";
         }
         if (raw.includes('Exchange rate')) {
-            return "為替レートがDBに存在しないか不正です。exchange_rates テーブルに JPY/ USD など必要なレートを登録してください。";
+            return "為替レートがDBに存在しないか不正です。exchange_rates テーブルに JPY/USD など必要なレートを登録してください。";
         }
         if (raw.includes('shipping') || raw.includes('No shipping')) {
             return "配送先に対応する送料が見つかりません。shipping_zones / shipping_rates テーブルを確認してください。";
@@ -703,8 +713,21 @@ export default function DashboardPage() {
                         <svg className="h-5 w-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <div>
                             <p>{error}</p>
-                            {error.includes('Supabase') && (
-                                <p className="mt-2 text-amber-300/90 text-xs">設定後は、ターミナルで Ctrl+C でサーバーを停止し、再度 npm run dev を実行してください。</p>
+                            {(error.includes('Supabase') || error.includes('接続設定') || error.includes('環境変数')) && (
+                                <p className="mt-2 text-amber-300/90 text-xs">
+                                    Vercel の場合: Vercel ダッシュボード → Settings → Environment Variables で <code className="bg-slate-800 px-1 rounded">SUPABASE_URL</code> と <code className="bg-slate-800 px-1 rounded">SUPABASE_ANON_KEY</code> を設定後、再デプロイしてください。<br/>
+                                    ローカルの場合: .env.local を確認後、サーバーを再起動してください。
+                                </p>
+                            )}
+                            {error.includes('テーブルが存在しません') && (
+                                <p className="mt-2 text-amber-300/90 text-xs">
+                                    Supabase ダッシュボード → SQL Editor で <code className="bg-slate-800 px-1 rounded">schema.sql</code> を実行してテーブルを作成してください。
+                                </p>
+                            )}
+                            {error.includes('アクセス権限') && (
+                                <p className="mt-2 text-amber-300/90 text-xs">
+                                    Vercel の環境変数に <code className="bg-slate-800 px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> を追加すると解決する場合があります。
+                                </p>
                             )}
                         </div>
                     </div>
@@ -809,14 +832,20 @@ export default function DashboardPage() {
                                         <h4 className="text-xs font-bold text-slate-200 line-clamp-2 mb-2 leading-snug">
                                             {product.title}
                                         </h4>
-                                        <div className="flex items-center justify-between mb-2 text-[10px]">
-                                            <div>
-                                                <span className="text-slate-500">仕入({product.domesticPlatform === 'Yahoo Auctions' ? 'ヤフオク' : product.domesticPlatform === 'Rakuma' ? 'ラクマ' : product.domesticPlatform === 'PayPayフリマ' ? 'PayPay' : 'メルカリ'}):</span>{' '}
-                                                <span className="text-slate-300 font-bold">¥{(product.domesticPrice || product.mercariPrice).toLocaleString()}</span>
+                                        {/* 仕入れ先 → 販売先ルート（視覚的に明確化） */}
+                                        <div className="flex items-center gap-1.5 mb-2 p-2 bg-slate-800/60 rounded-lg border border-slate-700/50">
+                                            <div className="flex-1 text-center">
+                                                <p className="text-[8px] text-slate-500 font-black uppercase">🛒 仕入れ</p>
+                                                <p className="text-[10px] text-slate-300 font-bold">
+                                                    {product.domesticPlatform === 'Yahoo Auctions' ? 'ヤフオク' : product.domesticPlatform === 'Rakuma' ? 'ラクマ' : product.domesticPlatform === 'PayPayフリマ' ? 'PayPay' : 'メルカリ'}
+                                                </p>
+                                                <p className="text-sm font-black text-white">¥{(product.domesticPrice || product.mercariPrice).toLocaleString()}</p>
                                             </div>
-                                            <div>
-                                                <span className="text-slate-500">{product.overseasPlatform || 'eBay'}:</span>{' '}
-                                                <span className="text-indigo-300 font-bold">${(product.overseasPrice || product.ebayPriceUsd).toFixed(2)}</span>
+                                            <div className="text-indigo-400 font-black text-base shrink-0">→</div>
+                                            <div className="flex-1 text-center">
+                                                <p className="text-[8px] text-indigo-400 font-black uppercase">💰 販売</p>
+                                                <p className="text-[10px] text-indigo-300 font-bold">{product.overseasPlatform || 'eBay'}</p>
+                                                <p className="text-sm font-black text-indigo-200">${(product.overseasPrice || product.ebayPriceUsd).toFixed(2)}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between mb-2 text-[10px]">
@@ -831,19 +860,13 @@ export default function DashboardPage() {
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                                            {/* 最適ルートバッジ */}
-                                            {product.bestCombination && (
-                                                <span className="px-1.5 py-0.5 rounded text-[8px] font-black border bg-purple-500/15 text-purple-400 border-purple-500/30">
-                                                    最適: {product.bestCombination}
-                                                </span>
-                                            )}
                                             {/* 仕入先データソース */}
                                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-black border ${
                                                 (product.domesticDataSource || product.mercariDataSource) === 'api' || (product.domesticDataSource || product.mercariDataSource) === 'scraped'
                                                     ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                                                     : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                                             }`}>
-                                                {product.domesticPlatform === 'Yahoo Auctions' ? 'ヤフオク' : product.domesticPlatform === 'Rakuma' ? 'ラクマ' : product.domesticPlatform === 'PayPayフリマ' ? 'PayPay' : 'メルカリ'}: {(product.domesticDataSource || product.mercariDataSource) === 'api' || (product.domesticDataSource || product.mercariDataSource) === 'scraped' ? '実データ' : '推定価格'}
+                                                仕入: {(product.domesticDataSource || product.mercariDataSource) === 'api' || (product.domesticDataSource || product.mercariDataSource) === 'scraped' ? '実データ' : '推定価格'}
                                             </span>
                                             {/* 販売先データソース */}
                                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-black border ${
@@ -851,96 +874,64 @@ export default function DashboardPage() {
                                                     ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                                                     : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                                             }`}>
-                                                {product.overseasPlatform || 'eBay'}: {(product.overseasDataSource || product.ebayDataSource) === 'api' || (product.overseasDataSource || product.ebayDataSource) === 'scraped' ? '実データ' : '推定価格'}
+                                                販売: {(product.overseasDataSource || product.ebayDataSource) === 'api' || (product.overseasDataSource || product.ebayDataSource) === 'scraped' ? '実データ' : '推定価格'}
                                             </span>
                                         </div>
-                                        <div className="mt-auto grid grid-cols-2 gap-2">
-                                            {/* 仕入先ボタン: メルカリ */}
-                                            {(product.mercariUrl && product.mercariUrl !== '#') && (
-                                                <a
-                                                    href={product.mercariUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-slate-700"
-                                                >
-                                                    メルカリ
+                                        <div className="mt-auto space-y-1.5">
+                                            {/* 仕入れボタン群（国内） */}
+                                            <p className="text-[8px] text-slate-600 font-black uppercase tracking-wider">🛒 仕入れ先（国内）</p>
+                                            <div className="grid grid-cols-2 gap-1.5">
+                                                {(product.mercariUrl && product.mercariUrl !== '#') && (
+                                                    <a href={product.mercariUrl} target="_blank" rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-slate-700">
+                                                        メルカリで仕入れる
+                                                    </a>
+                                                )}
+                                                {(product.yahooUrl || (product.domesticPlatform === 'Yahoo Auctions' && product.domesticUrl && product.domesticUrl !== '#')) && (
+                                                    <a href={product.domesticPlatform === 'Yahoo Auctions' ? product.domesticUrl : (product.yahooUrl || '#')} target="_blank" rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-1 bg-red-900/40 hover:bg-red-800/50 text-red-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-red-700/40">
+                                                        ヤフオクで仕入れる
+                                                    </a>
+                                                )}
+                                                {(product.rakumaUrl || (product.domesticPlatform === 'Rakuma' && product.domesticUrl && product.domesticUrl !== '#')) && (
+                                                    <a href={product.domesticPlatform === 'Rakuma' ? product.domesticUrl : (product.rakumaUrl || '#')} target="_blank" rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-1 bg-pink-900/40 hover:bg-pink-800/50 text-pink-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-pink-700/40">
+                                                        ラクマで仕入れる
+                                                    </a>
+                                                )}
+                                                {(product.paypayUrl || (product.domesticPlatform === 'PayPayフリマ' && product.domesticUrl && product.domesticUrl !== '#')) && (
+                                                    <a href={product.domesticPlatform === 'PayPayフリマ' ? product.domesticUrl : (product.paypayUrl || '#')} target="_blank" rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-1 bg-rose-900/40 hover:bg-rose-800/50 text-rose-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-rose-700/40">
+                                                        PayPayで仕入れる
+                                                    </a>
+                                                )}
+                                            </div>
+                                            {/* 販売ボタン群（海外） */}
+                                            <p className="text-[8px] text-indigo-500 font-black uppercase tracking-wider mt-1">💰 販売先（海外）</p>
+                                            <div className="grid grid-cols-2 gap-1.5">
+                                                <a href={product.ebaySearchUrl} target="_blank" rel="noopener noreferrer"
+                                                    className="flex items-center justify-center gap-1 bg-indigo-600/80 hover:bg-indigo-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all">
+                                                    eBayで売る
                                                 </a>
-                                            )}
-                                            {/* 仕入先ボタン: ヤフオク */}
-                                            {(product.yahooUrl || (product.domesticPlatform === 'Yahoo Auctions' && product.domesticUrl && product.domesticUrl !== '#')) && (
-                                                <a
-                                                    href={product.domesticPlatform === 'Yahoo Auctions' ? product.domesticUrl : (product.yahooUrl || '#')}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-1 bg-red-900/40 hover:bg-red-800/50 text-red-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-red-700/40"
-                                                >
-                                                    ヤフオク
-                                                </a>
-                                            )}
-                                            {/* 仕入先ボタン: ラクマ */}
-                                            {(product.rakumaUrl || (product.domesticPlatform === 'Rakuma' && product.domesticUrl && product.domesticUrl !== '#')) && (
-                                                <a
-                                                    href={product.domesticPlatform === 'Rakuma' ? product.domesticUrl : (product.rakumaUrl || '#')}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-1 bg-pink-900/40 hover:bg-pink-800/50 text-pink-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-pink-700/40"
-                                                >
-                                                    ラクマ
-                                                </a>
-                                            )}
-                                            {/* 仕入先ボタン: PayPayフリマ */}
-                                            {(product.paypayUrl || (product.domesticPlatform === 'PayPayフリマ' && product.domesticUrl && product.domesticUrl !== '#')) && (
-                                                <a
-                                                    href={product.domesticPlatform === 'PayPayフリマ' ? product.domesticUrl : (product.paypayUrl || '#')}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-1 bg-rose-900/40 hover:bg-rose-800/50 text-rose-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-rose-700/40"
-                                                >
-                                                    PayPay
-                                                </a>
-                                            )}
-                                            {/* 販売先ボタン: eBay */}
-                                            <a
-                                                href={product.ebaySearchUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center justify-center gap-1 bg-indigo-600/80 hover:bg-indigo-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all"
-                                            >
-                                                eBay検索
-                                            </a>
-                                            {/* 販売先ボタン: Amazon */}
-                                            {product.amazonSearchUrl && (
-                                                <a
-                                                    href={product.amazonSearchUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-1 bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all"
-                                                >
-                                                    Amazon検索
-                                                </a>
-                                            )}
-                                            {/* 販売先ボタン: StockX */}
-                                            {product.stockxSearchUrl && (
-                                                <a
-                                                    href={product.stockxSearchUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-1 bg-emerald-600/80 hover:bg-emerald-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all"
-                                                >
-                                                    StockX検索
-                                                </a>
-                                            )}
-                                            {/* 販売先ボタン: Mercari US */}
-                                            {product.mercariUsSearchUrl && (
-                                                <a
-                                                    href={product.mercariUsSearchUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-1 bg-sky-600/80 hover:bg-sky-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all"
-                                                >
-                                                    Mercari US
-                                                </a>
-                                            )}
+                                                {product.amazonSearchUrl && (
+                                                    <a href={product.amazonSearchUrl} target="_blank" rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-1 bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all">
+                                                        Amazonで売る
+                                                    </a>
+                                                )}
+                                                {product.stockxSearchUrl && (
+                                                    <a href={product.stockxSearchUrl} target="_blank" rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-1 bg-emerald-600/80 hover:bg-emerald-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all">
+                                                        StockXで売る
+                                                    </a>
+                                                )}
+                                                {product.mercariUsSearchUrl && (
+                                                    <a href={product.mercariUsSearchUrl} target="_blank" rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-1 bg-sky-600/80 hover:bg-sky-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all">
+                                                        Mercari USで売る
+                                                    </a>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1290,15 +1281,20 @@ export default function DashboardPage() {
                                             {listing.productTitleJP}
                                         </h3>
 
-                                        {/* 価格比較 */}
+                                        {/* 価格比較: 仕入れ元 → 販売先 */}
                                         <div className="flex items-center justify-between mb-6 p-4 bg-slate-800/30 rounded-2xl border border-slate-700/30">
                                             <div className="text-center">
-                                                <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Domestic (JP)</p>
+                                                <p className="text-[9px] text-slate-500 font-black uppercase mb-0.5">🛒 仕入れ元</p>
+                                                <p className="text-[10px] text-slate-400 font-bold mb-1">メルカリ（国内）</p>
                                                 <p className="text-lg font-bold text-slate-200">¥{listing.domesticPrice.toLocaleString()}</p>
                                             </div>
-                                            <div className="h-8 w-px bg-slate-700/50"></div>
-                                            <div className="text-right text-center">
-                                                <p className="text-[10px] text-indigo-400 font-black uppercase mb-1">Overseas (eBay)</p>
+                                            <div className="flex flex-col items-center gap-1">
+                                                <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                                                <span className="text-[8px] text-indigo-400 font-bold">売る</span>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-[9px] text-indigo-400 font-black uppercase mb-0.5">💰 販売先</p>
+                                                <p className="text-[10px] text-indigo-300 font-bold mb-1">eBay（海外）</p>
                                                 <p className="text-lg font-bold text-white">${listing.overseasSellingPrice.amount.toLocaleString()}</p>
                                             </div>
                                         </div>
