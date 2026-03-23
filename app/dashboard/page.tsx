@@ -645,6 +645,7 @@ export default function DashboardPage() {
                                         value={searchKeyword}
                                         onChange={(e) => setSearchKeyword(e.target.value)}
                                         disabled={analyzing}
+                                        aria-label="分析キーワードを入力"
                                         className="w-full bg-slate-800/50 border border-slate-700/80 rounded-full py-2.5 pl-5 pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-600 text-sm disabled:opacity-50"
                                     />
                                     <button
@@ -667,6 +668,7 @@ export default function DashboardPage() {
                                         value={analysisProductSku}
                                         onChange={(e) => setAnalysisProductSku(e.target.value)}
                                         disabled={analyzing}
+                                        aria-label="分析に紐づける商品SKUを選択"
                                         className="flex-1 min-w-0 bg-slate-800/50 border border-slate-700/80 rounded-lg py-2 px-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 disabled:opacity-50"
                                     >
                                         <option value="">指定しない</option>
@@ -706,6 +708,7 @@ export default function DashboardPage() {
                                                 key={kw}
                                                 type="button"
                                                 onClick={() => { handleAnalyze(undefined, kw); }}
+                                                aria-label={`おすすめキーワード「${kw}」で市場を分析する`}
                                                 className="text-[10px] font-black px-2 py-0.5 rounded-md border transition-all bg-slate-800 hover:bg-indigo-500/20 hover:text-indigo-400 border-slate-700"
                                             >
                                                 {kw}
@@ -774,14 +777,14 @@ export default function DashboardPage() {
 
                 {/* 統計エリア */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
-                    <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                    <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
                         <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
                             <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path></svg>
                         </div>
                         <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">表示中の商品</h3>
                         <p className="text-4xl font-black text-white">{filteredListings.length}</p>
                     </div>
-                    <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                    <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
                         <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity text-emerald-500">
                             <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path></svg>
                         </div>
@@ -809,7 +812,7 @@ export default function DashboardPage() {
                 {/* おすすめ商品セクション */}
                 <div className="mb-8">
                     <p className="text-[10px] text-amber-400/80 mb-3">
-                        ⚠️ <strong>推定利益について</strong>: 同一キーワードの国内価格と海外相場の中央値を比較しています。<strong>表示されている国内商品と海外商品は同一商品とは限りません。</strong>
+                        <strong>注意: 推定利益について</strong> - 同一キーワードの国内価格と海外相場の中央値を比較しています。<strong>表示されている国内商品と海外商品は同一商品とは限りません。</strong>
                         必ずeBay等で「同じ商品」が実際にいくらで売れているか確認してから仕入れてください。価格差が8倍以上の組み合わせは自動除外しています。
                     </p>
                     <div className="flex items-center gap-2 mb-4">
@@ -826,6 +829,8 @@ export default function DashboardPage() {
                         <button
                             type="button"
                             onClick={() => setInstantSellOnly(prev => !prev)}
+                            aria-pressed={instantSellOnly}
+                            aria-label="即売れ候補商品のみ表示する"
                             className={`ml-2 flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border transition-all ${
                                 instantSellOnly
                                     ? 'bg-orange-500/20 text-orange-300 border-orange-500/40'
@@ -833,7 +838,8 @@ export default function DashboardPage() {
                             }`}
                             title="海外コレクター需要が高く即売れしやすい商品のみ表示"
                         >
-                            🔥 即売れ候補のみ
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                            即売れ候補のみ
                             {recommendedProducts.filter(p => p.isInstantSellCandidate).length > 0 && (
                                 <span className="ml-1 bg-orange-500 text-white rounded-full px-1.5 text-[8px]">
                                     {recommendedProducts.filter(p => p.isInstantSellCandidate).length}
@@ -880,7 +886,7 @@ export default function DashboardPage() {
                                         {product.isInstantSellCandidate && (
                                             <div className="absolute bottom-2 left-2 flex items-center gap-1">
                                                 <span className="px-2 py-0.5 rounded-md text-[9px] font-black backdrop-blur-md bg-orange-500/30 text-orange-200 border border-orange-500/50">
-                                                    🔥 即売れ候補
+                                                    即売れ候補
                                                 </span>
                                                 {product.demandCategory && (
                                                     <span className="px-1.5 py-0.5 rounded text-[8px] font-black bg-slate-900/70 text-slate-300 border border-slate-600/50 backdrop-blur-sm">
@@ -897,7 +903,7 @@ export default function DashboardPage() {
                                         {/* 仕入れ先 → 販売先ルート（視覚的に明確化） */}
                                         <div className="flex items-center gap-1.5 mb-2 p-2 bg-slate-800/60 rounded-lg border border-slate-700/50">
                                             <div className="flex-1 text-center">
-                                                <p className="text-[8px] text-slate-500 font-black uppercase">🛒 仕入れ</p>
+                                                <p className="text-[8px] text-slate-500 font-black uppercase">仕入れ</p>
                                                 <p className="text-[10px] text-slate-300 font-bold">
                                                     {product.domesticPlatform === 'Yahoo Auctions' ? 'ヤフオク' : product.domesticPlatform === 'Rakuma' ? 'ラクマ' : product.domesticPlatform === 'PayPayフリマ' ? 'PayPay' : 'メルカリ'}
                                                 </p>
@@ -905,7 +911,7 @@ export default function DashboardPage() {
                                             </div>
                                             <div className="text-indigo-400 font-black text-base shrink-0">→</div>
                                             <div className="flex-1 text-center">
-                                                <p className="text-[8px] text-indigo-400 font-black uppercase">💰 販売</p>
+                                                <p className="text-[8px] text-indigo-400 font-black uppercase">販売</p>
                                                 <p className="text-[10px] text-indigo-300 font-bold">{product.overseasPlatform || 'eBay'}</p>
                                                 <p className="text-sm font-black text-indigo-200">${(product.overseasPrice || product.ebayPriceUsd).toFixed(2)}</p>
                                             </div>
@@ -925,8 +931,9 @@ export default function DashboardPage() {
                                             <div className="flex items-center gap-1.5 mb-2 text-[10px]" title={product.demandReasoning ?? ''}>
                                                 <span className="text-slate-500">海外需要:</span>
                                                 {[1,2,3,4,5].map(s => (
-                                                    <span key={s} className={s <= Math.round((product.demandScore ?? 0) / 2)
-                                                        ? 'text-orange-400' : 'text-slate-700'}>★</span>
+                                                    <svg key={s} className={`w-3 h-3 ${s <= Math.round((product.demandScore ?? 0) / 2) ? 'text-orange-400' : 'text-slate-700'}`} fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                    </svg>
                                                 ))}
                                                 <span className={`font-bold ${
                                                     (product.demandScore ?? 0) >= 7 ? 'text-orange-400' :
@@ -961,54 +968,62 @@ export default function DashboardPage() {
                                         </div>
                                         <div className="mt-auto space-y-1.5">
                                             {/* 仕入れボタン群（国内） */}
-                                            <p className="text-[8px] text-slate-600 font-black uppercase tracking-wider">🛒 仕入れ先（国内）</p>
+                                            <p className="text-[8px] text-slate-600 font-black uppercase tracking-wider">仕入れ先（国内）</p>
                                             <div className="grid grid-cols-2 gap-1.5">
                                                 {(product.mercariUrl && product.mercariUrl !== '#') && (
                                                     <a href={product.mercariUrl} target="_blank" rel="noopener noreferrer"
+                                                        aria-label={`${product.title}をメルカリで仕入れる`}
                                                         className="flex items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-slate-700">
                                                         メルカリで仕入れる
                                                     </a>
                                                 )}
                                                 {(product.yahooUrl || (product.domesticPlatform === 'Yahoo Auctions' && product.domesticUrl && product.domesticUrl !== '#')) && (
                                                     <a href={product.domesticPlatform === 'Yahoo Auctions' ? product.domesticUrl : (product.yahooUrl || '#')} target="_blank" rel="noopener noreferrer"
+                                                        aria-label={`${product.title}をヤフオクで仕入れる`}
                                                         className="flex items-center justify-center gap-1 bg-red-900/40 hover:bg-red-800/50 text-red-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-red-700/40">
                                                         ヤフオクで仕入れる
                                                     </a>
                                                 )}
                                                 {(product.rakumaUrl || (product.domesticPlatform === 'Rakuma' && product.domesticUrl && product.domesticUrl !== '#')) && (
                                                     <a href={product.domesticPlatform === 'Rakuma' ? product.domesticUrl : (product.rakumaUrl || '#')} target="_blank" rel="noopener noreferrer"
+                                                        aria-label={`${product.title}をラクマで仕入れる`}
                                                         className="flex items-center justify-center gap-1 bg-pink-900/40 hover:bg-pink-800/50 text-pink-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-pink-700/40">
                                                         ラクマで仕入れる
                                                     </a>
                                                 )}
                                                 {(product.paypayUrl || (product.domesticPlatform === 'PayPayフリマ' && product.domesticUrl && product.domesticUrl !== '#')) && (
                                                     <a href={product.domesticPlatform === 'PayPayフリマ' ? product.domesticUrl : (product.paypayUrl || '#')} target="_blank" rel="noopener noreferrer"
+                                                        aria-label={`${product.title}をPayPayフリマで仕入れる`}
                                                         className="flex items-center justify-center gap-1 bg-rose-900/40 hover:bg-rose-800/50 text-rose-300 text-[10px] font-bold py-1.5 rounded-lg transition-all border border-rose-700/40">
                                                         PayPayで仕入れる
                                                     </a>
                                                 )}
                                             </div>
                                             {/* 販売ボタン群（海外） */}
-                                            <p className="text-[8px] text-indigo-500 font-black uppercase tracking-wider mt-1">💰 販売先（海外）</p>
+                                            <p className="text-[8px] text-indigo-500 font-black uppercase tracking-wider mt-1">販売先（海外）</p>
                                             <div className="grid grid-cols-2 gap-1.5">
                                                 <a href={product.ebaySearchUrl} target="_blank" rel="noopener noreferrer"
+                                                    aria-label={`${product.title}をeBayで売る`}
                                                     className="flex items-center justify-center gap-1 bg-indigo-600/80 hover:bg-indigo-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all">
                                                     eBayで売る
                                                 </a>
                                                 {product.amazonSearchUrl && (
                                                     <a href={product.amazonSearchUrl} target="_blank" rel="noopener noreferrer"
+                                                        aria-label={`${product.title}をAmazonで売る`}
                                                         className="flex items-center justify-center gap-1 bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all">
                                                         Amazonで売る
                                                     </a>
                                                 )}
                                                 {product.stockxSearchUrl && (
                                                     <a href={product.stockxSearchUrl} target="_blank" rel="noopener noreferrer"
+                                                        aria-label={`${product.title}をStockXで売る`}
                                                         className="flex items-center justify-center gap-1 bg-emerald-600/80 hover:bg-emerald-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all">
                                                         StockXで売る
                                                     </a>
                                                 )}
                                                 {product.mercariUsSearchUrl && (
                                                     <a href={product.mercariUsSearchUrl} target="_blank" rel="noopener noreferrer"
+                                                        aria-label={`${product.title}をMercari USで売る`}
                                                         className="flex items-center justify-center gap-1 bg-sky-600/80 hover:bg-sky-500 text-white text-[10px] font-bold py-1.5 rounded-lg transition-all">
                                                         Mercari USで売る
                                                     </a>
@@ -1055,6 +1070,7 @@ export default function DashboardPage() {
                         <select
                             value={sortKey}
                             onChange={(e) => setSortKey(e.target.value as SortKey)}
+                            aria-label="商品一覧の並び順を選択"
                             className="bg-slate-900 border border-slate-700 text-[11px] rounded-lg px-2 py-1 text-slate-300"
                         >
                             <option value="profitAmountDesc">並び順: 利益額が高い順</option>
@@ -1065,6 +1081,7 @@ export default function DashboardPage() {
                         <select
                             value={minProfitFilter}
                             onChange={(e) => setMinProfitFilter(Number(e.target.value) as 1100 | 3000)}
+                            aria-label="最低利益フィルターを選択"
                             className="bg-slate-900 border border-slate-700 text-[11px] rounded-lg px-2 py-1 text-slate-300"
                         >
                             <option value={1100}>最低利益: 1,100円以上</option>
@@ -1073,6 +1090,7 @@ export default function DashboardPage() {
                         <select
                             value={tagFilter}
                             onChange={(e) => setTagFilter(e.target.value as ListingTag | 'all')}
+                            aria-label="タグでフィルタリング"
                             className="bg-slate-900 border border-slate-700 text-[11px] rounded-lg px-2 py-1 text-slate-300"
                         >
                             <option value="all">タグ: すべて</option>
@@ -1084,6 +1102,7 @@ export default function DashboardPage() {
                         <button
                             type="button"
                             onClick={handleExportCsv}
+                            aria-label="商品一覧をCSV形式でエクスポートする"
                             className="text-[11px] px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold"
                         >
                             CSVエクスポート
@@ -1105,6 +1124,8 @@ export default function DashboardPage() {
                                     }
                                 }
                             }}
+                            aria-label={activityLogsOpen ? '実行ログを閉じる' : '実行ログを開く'}
+                            aria-expanded={activityLogsOpen}
                             className="text-[11px] px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold"
                         >
                             {activityLogsOpen ? 'ログを閉じる' : '実行ログ'}
@@ -1137,7 +1158,7 @@ export default function DashboardPage() {
                 )}
 
                 {/* 利益シミュレータ */}
-                <div className="mb-12 p-6 bg-slate-900/60 border border-slate-700/80 rounded-2xl">
+                <div className="mb-12 p-6 backdrop-blur-sm bg-white/5 border border-white/10 shadow-xl rounded-2xl">
                     <div className="flex items-center justify-between mb-4 gap-2">
                         <div className="flex items-center gap-2">
                             <svg className="h-5 w-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .672-3 1.5S10.343 11 12 11s3 .672 3 1.5S13.657 14 12 14m0-6V6m0 8v2m-9-4a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
@@ -1147,18 +1168,22 @@ export default function DashboardPage() {
                     </div>
                     <form onSubmit={handleSimulate} className="grid grid-cols-1 md:grid-cols-5 gap-3 text-[11px]">
                         <div className="flex flex-col gap-1">
-                            <label className="text-slate-400 font-bold">SKU</label>
+                            <label htmlFor="sim-sku" className="text-slate-400 font-bold">SKU</label>
                             <input
+                                id="sim-sku"
                                 value={simProductSku}
                                 onChange={(e) => setSimProductSku(e.target.value)}
+                                aria-label="シミュレーション対象の商品SKUを入力"
                                 className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100"
                             />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-slate-400 font-bold">国内プラットフォーム</label>
+                            <label htmlFor="sim-domestic-platform" className="text-slate-400 font-bold">国内プラットフォーム</label>
                             <select
+                                id="sim-domestic-platform"
                                 value={simDomesticPlatform}
                                 onChange={(e) => setSimDomesticPlatform(e.target.value as 'Mercari' | 'Yahoo Auctions' | 'Rakuma' | 'PayPayフリマ')}
+                                aria-label="仕入れに使う国内プラットフォームを選択"
                                 className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100"
                             >
                                 <option value="Mercari">Mercari (10%)</option>
@@ -1168,10 +1193,12 @@ export default function DashboardPage() {
                             </select>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-slate-400 font-bold">海外プラットフォーム</label>
+                            <label htmlFor="sim-overseas-platform" className="text-slate-400 font-bold">海外プラットフォーム</label>
                             <select
+                                id="sim-overseas-platform"
                                 value={simOverseasPlatform}
                                 onChange={(e) => setSimOverseasPlatform(e.target.value as 'eBay' | 'StockX' | 'Amazon' | 'Mercari US')}
+                                aria-label="販売に使う海外プラットフォームを選択"
                                 className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100"
                             >
                                 <option value="eBay">eBay (12.9%)</option>
@@ -1181,22 +1208,26 @@ export default function DashboardPage() {
                             </select>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-slate-400 font-bold">配送先国コード</label>
+                            <label htmlFor="sim-country" className="text-slate-400 font-bold">配送先国コード</label>
                             <input
+                                id="sim-country"
                                 value={simDestinationCountry}
                                 onChange={(e) => setSimDestinationCountry(e.target.value.toUpperCase())}
+                                aria-label="配送先の国コードを2文字で入力（例: US, JP）"
                                 className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-100"
                                 placeholder="US"
                             />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <label className="text-slate-400 font-bold">目標販売価格 (USD)</label>
+                            <label htmlFor="sim-target-price" className="text-slate-400 font-bold">目標販売価格 (USD)</label>
                             <input
+                                id="sim-target-price"
                                 type="number"
                                 min="0"
                                 step="0.01"
                                 value={simTargetSellingPrice}
                                 onChange={(e) => setSimTargetSellingPrice(e.target.value)}
+                                aria-label="目標販売価格をUSDで入力"
                                 className={`bg-slate-900 border rounded-lg px-2 py-1 text-slate-100 ${simTargetSellingPrice && Number(simTargetSellingPrice) <= 0 ? 'border-rose-500' : 'border-slate-700'}`}
                                 placeholder="例: 120"
                             />
@@ -1205,13 +1236,15 @@ export default function DashboardPage() {
                             )}
                         </div>
                         <div className="flex flex-col gap-1 md:col-span-2">
-                            <label className="text-slate-400 font-bold">国内仕入価格 (JPY, 任意)</label>
+                            <label htmlFor="sim-domestic-price" className="text-slate-400 font-bold">国内仕入価格 (JPY, 任意)</label>
                             <input
+                                id="sim-domestic-price"
                                 type="number"
                                 min="0"
                                 step="1"
                                 value={simManualDomesticPrice}
                                 onChange={(e) => setSimManualDomesticPrice(e.target.value)}
+                                aria-label="国内仕入価格を円で入力（任意）"
                                 className={`bg-slate-900 border rounded-lg px-2 py-1 text-slate-100 ${simManualDomesticPrice && Number(simManualDomesticPrice) < 0 ? 'border-rose-500' : 'border-slate-700'}`}
                                 placeholder="DBのpurchase_priceを使う場合は空欄"
                             />
@@ -1265,7 +1298,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* 計算の仕組み解説 */}
-                <div className="mb-12 p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+                <div className="mb-12 p-6 backdrop-blur-sm bg-indigo-500/10 border border-indigo-500/20 shadow-lg rounded-2xl">
                     <div className="flex items-center gap-2 mb-4">
                         <svg className="h-5 w-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <h3 className="text-sm font-black text-indigo-300 uppercase tracking-wider">利益計算の仕組みについて</h3>
@@ -1322,11 +1355,12 @@ export default function DashboardPage() {
                             <div className="flex flex-col items-center gap-4">
                                 <div className="px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
                                     <p className="text-[11px] text-indigo-300 font-bold">
-                                        💡 現在、{hiddenCount}件の商品が利益基準（{analysisMode === 'professional' ? '¥3,000' : '¥1,100'}）未満のため非表示になっています。
+                                        現在、{hiddenCount}件の商品が利益基準（{analysisMode === 'professional' ? '¥3,000' : '¥1,100'}）未満のため非表示になっています。
                                     </p>
                                 </div>
                                 <button
                                     onClick={() => setAnalysisMode('casual')}
+                                    aria-label="手軽にコツコツモードに切り替えて非表示の商品を確認する"
                                     className="group px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-black transition-all shadow-xl shadow-indigo-600/20 flex items-center gap-2"
                                 >
                                     「手軽にコツコツ」モードに切り替えて確認する
@@ -1380,7 +1414,7 @@ export default function DashboardPage() {
                                         {/* 価格比較: 仕入れ元 → 販売先 */}
                                         <div className="flex items-center justify-between mb-6 p-4 bg-slate-800/30 rounded-2xl border border-slate-700/30">
                                             <div className="text-center">
-                                                <p className="text-[9px] text-slate-500 font-black uppercase mb-0.5">🛒 仕入れ元</p>
+                                                <p className="text-[9px] text-slate-500 font-black uppercase mb-0.5">仕入れ元</p>
                                                 <p className="text-[10px] text-slate-400 font-bold mb-1">メルカリ（国内）</p>
                                                 <p className="text-lg font-bold text-slate-200">¥{listing.domesticPrice.toLocaleString()}</p>
                                             </div>
@@ -1389,7 +1423,7 @@ export default function DashboardPage() {
                                                 <span className="text-[8px] text-indigo-400 font-bold">売る</span>
                                             </div>
                                             <div className="text-center">
-                                                <p className="text-[9px] text-indigo-400 font-black uppercase mb-0.5">💰 販売先</p>
+                                                <p className="text-[9px] text-indigo-400 font-black uppercase mb-0.5">販売先</p>
                                                 <p className="text-[10px] text-indigo-300 font-bold mb-1">eBay（海外）</p>
                                                 <p className="text-lg font-bold text-white">${listing.overseasSellingPrice.amount.toLocaleString()}</p>
                                             </div>
@@ -1411,6 +1445,8 @@ export default function DashboardPage() {
                                             <span className="text-xs font-bold text-slate-500">推定純利益</span>
                                             <button
                                                 onClick={() => setExpandedProfitId(expandedProfitId === listing.id ? null : listing.id)}
+                                                aria-expanded={expandedProfitId === listing.id}
+                                                aria-label={expandedProfitId === listing.id ? `${listing.productTitleJP}の利益内訳を閉じる` : `${listing.productTitleJP}の利益内訳を表示する`}
                                                 className="text-[10px] font-black text-indigo-400 hover:text-indigo-300 underline decoration-indigo-500/30 underline-offset-2"
                                             >
                                                 {expandedProfitId === listing.id ? '内訳を閉じる' : '内訳を表示'}
@@ -1472,6 +1508,8 @@ export default function DashboardPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => updateListingTag(listing.id, 'potential')}
+                                                        aria-label={`${listing.productTitleJP}を有望タグに設定`}
+                                                        aria-pressed={listing.tag === 'potential'}
                                                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${listing.tag === 'potential' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-900 text-slate-300 border-slate-700'}`}
                                                     >
                                                         有望
@@ -1479,6 +1517,8 @@ export default function DashboardPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => updateListingTag(listing.id, 'hold')}
+                                                        aria-label={`${listing.productTitleJP}を保留タグに設定`}
+                                                        aria-pressed={listing.tag === 'hold'}
                                                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${listing.tag === 'hold' ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-900 text-slate-300 border-slate-700'}`}
                                                     >
                                                         保留
@@ -1486,6 +1526,8 @@ export default function DashboardPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => updateListingTag(listing.id, 'purchased')}
+                                                        aria-label={`${listing.productTitleJP}を仕入れ済みタグに設定`}
+                                                        aria-pressed={listing.tag === 'purchased'}
                                                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${listing.tag === 'purchased' ? 'bg-sky-600 text-white border-sky-500' : 'bg-slate-900 text-slate-300 border-slate-700'}`}
                                                     >
                                                         仕入れ済み
@@ -1496,6 +1538,7 @@ export default function DashboardPage() {
                                                 value={listing.note}
                                                 onChange={(e) => updateListingNote(listing.id, e.target.value)}
                                                 placeholder="自分用メモ（仕入れメモ、在庫場所、注意点など）"
+                                                aria-label={`${listing.productTitleJP}のメモを入力`}
                                                 className="w-full bg-slate-900 border border-slate-800 rounded-xl px-2 py-1 text-[11px] text-slate-200 resize-none h-16"
                                             />
                                         </div>
@@ -1514,6 +1557,7 @@ export default function DashboardPage() {
                                             href={listing.listingUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
+                                            aria-label={`${listing.productTitleJP}をメルカリで確認する`}
                                             className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-3 rounded-xl transition-all border border-slate-700 shadow-lg"
                                         >
                                             メルカリで見る
@@ -1522,6 +1566,7 @@ export default function DashboardPage() {
                                             href={listing.ebaySearchUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
+                                            aria-label={`${listing.productTitleJP}をeBayで市場調査する`}
                                             className={`flex items-center justify-center gap-2 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-xl ${analysisMode === 'casual' ? 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20' : 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/20'}`}
                                         >
                                             eBayで市場調査
@@ -1531,6 +1576,7 @@ export default function DashboardPage() {
                                         href={`/listing/${encodeURIComponent(listing.id)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        aria-label={`${listing.productTitleJP}の出品用ページをeBay用にコピーして開く`}
                                         className="mt-2 flex items-center justify-center gap-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-bold py-2.5 rounded-xl border border-emerald-500/30 transition-all"
                                     >
                                         出品用ページで開く（コピー＆eBayへ）
@@ -1540,6 +1586,8 @@ export default function DashboardPage() {
                                         <button
                                             type="button"
                                             onClick={() => setExpandedTemplateId(expandedTemplateId === listing.id ? null : listing.id)}
+                                            aria-expanded={expandedTemplateId === listing.id}
+                                            aria-label={expandedTemplateId === listing.id ? `${listing.productTitleJP}の出品用テンプレートを閉じる` : `${listing.productTitleJP}のeBay出品用テンプレートを表示する`}
                                             className="text-[10px] font-black text-slate-400 hover:text-slate-200 underline decoration-slate-600/50 underline-offset-2"
                                         >
                                             {expandedTemplateId === listing.id ? '出品用テンプレートを閉じる' : 'eBay出品用テンプレートを表示'}
