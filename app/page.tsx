@@ -186,7 +186,6 @@ export default function Home() {
                   strokeWidth={1.5}
                   stroke="currentColor"
                   className="w-8 h-8 text-cyan-400 shrink-0"
-                  aria-hidden="true"
                   aria-label={f.label}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d={f.svgPath} />

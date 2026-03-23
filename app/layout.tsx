@@ -29,6 +29,31 @@ export const metadata: Metadata = {
     robots: { index: true, follow: true },
 };
 
+const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "越境EC価格最適化エージェント",
+    description: DESC,
+    url: SITE_URL,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    offers: {
+        "@type": "Offer",
+        price: "4980",
+        priceCurrency: "JPY",
+        billingPeriod: "P1M",
+    },
+    provider: {
+        "@type": "Organization",
+        name: "ポッコリラボ",
+        contactPoint: {
+            "@type": "ContactPoint",
+            contactType: "customer support",
+            url: "https://twitter.com/levona_design",
+        },
+    },
+};
+
 export default function RootLayout({
     children,
 }: {
@@ -36,6 +61,12 @@ export default function RootLayout({
 }) {
     return (
         <html lang="ja">
+            <head>
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
+            </head>
             <body>
                 <ErrorBoundary>{children}</ErrorBoundary>
             </body>
