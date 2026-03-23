@@ -259,7 +259,7 @@ export default function DashboardPage() {
                 setProductSkus([]);
             }
         })();
-        setStreakData(loadStreak('ekkyo_ec'));
+        setStreakData(updateStreak('ekkyo_ec'));
         const interval = setInterval(fetchData, 60000); // 60秒ごとに更新（無料枠最適化）
         return () => clearInterval(interval);
     }, []);
