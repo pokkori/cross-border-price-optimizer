@@ -30,3 +30,5 @@ live_mercari.html
 # cursor
 .cursor/
 .vercel
+.claude/
+push-to-github.cmd
