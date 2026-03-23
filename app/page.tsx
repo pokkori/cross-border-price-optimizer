@@ -49,7 +49,8 @@ export default function Home() {
           <button
             onClick={startCheckout}
             disabled={loading}
-            className="bg-cyan-500 hover:bg-cyan-400 text-black font-black text-lg px-10 py-4 rounded-xl transition disabled:opacity-60"
+            className="bg-cyan-500 hover:bg-cyan-400 text-black font-black text-lg px-10 py-4 rounded-xl transition disabled:opacity-60 min-h-[44px]"
+            aria-label="越境EC価格最適化エージェントを月額4,980円で始める"
           >
             {loading ? "処理中..." : "¥4,980/月で始める →"}
           </button>
@@ -167,7 +168,8 @@ export default function Home() {
             <button
               onClick={startCheckout}
               disabled={loading}
-              className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-black text-lg py-4 rounded-xl transition disabled:opacity-60"
+              className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-black text-lg py-4 rounded-xl transition disabled:opacity-60 min-h-[44px]"
+              aria-label="越境EC価格最適化エージェントのプロプランを今すぐ始める"
             >
               {loading ? "処理中..." : "今すぐ始める →"}
             </button>
