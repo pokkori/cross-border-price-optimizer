@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { updateStreak, loadStreak, type StreakData } from '@/lib/streak';
 
 // タグ種別
 type ListingTag = 'none' | 'potential' | 'hold' | 'purchased';
@@ -135,6 +136,7 @@ export default function DashboardPage() {
     const [activityLogsLoading, setActivityLogsLoading] = useState(false);
     const [listingsPageSize, setListingsPageSize] = useState(30);
     const [instantSellOnly, setInstantSellOnly] = useState(false);
+    const [streakData, setStreakData] = useState<StreakData | null>(null);
 
     // ローカルストレージからタグ・メモ情報を読み込む
     const loadListingMeta = () => {
@@ -257,6 +259,7 @@ export default function DashboardPage() {
                 setProductSkus([]);
             }
         })();
+        setStreakData(loadStreak('ekkyo_ec'));
         const interval = setInterval(fetchData, 60000); // 60秒ごとに更新（無料枠最適化）
         return () => clearInterval(interval);
     }, []);
@@ -393,6 +396,7 @@ export default function DashboardPage() {
                             setSearchKeyword('');
                             setAnalyzing(false);
                             setAnalyzingKeyword('');
+                            setStreakData(updateStreak('ekkyo_ec'));
                         } else if (statusResult.status === 'failed') {
                             clearInterval(pollInterval);
                             setError(translateErrorMessage(statusResult.error || '分析に失敗しました'));
@@ -410,6 +414,7 @@ export default function DashboardPage() {
                 setSearchKeyword('');
                 setAnalyzing(false);
                 setAnalyzingKeyword('');
+                setStreakData(updateStreak('ekkyo_ec'));
             }
         } catch (e: any) {
             setError(translateErrorMessage(e.message));
@@ -604,6 +609,12 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                        {/* ストリークバッジ */}
+                        {streakData && streakData.count >= 1 && (
+                            <span aria-label={`${streakData.count}日連続利用中`} className="flex items-center gap-1 text-xs bg-yellow-400 text-slate-900 font-bold px-2.5 py-1 rounded-full">
+                                {streakData.count}日連続
+                            </span>
+                        )}
                         {/* モードセレクター */}
                         <div className="flex bg-slate-800/50 p-1 rounded-xl border border-slate-700/50">
                             <button
@@ -1013,6 +1024,20 @@ export default function DashboardPage() {
                             <p className="text-[11px] text-slate-500">
                                 利益が出そうな商品は見つかりませんでした。ScrapingBee APIキーを設定するとeBay価格を取得してリアルなおすすめが表示されます。
                             </p>
+                        </div>
+                    )}
+                    {filteredRecommendedProducts.length > 0 && (
+                        <div className="mt-4 flex justify-end">
+                            <a
+                                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("越境EC価格最適化AIで価格戦略を最適化しました！ #越境EC #EC #AI https://ekkyo-ec-agent.vercel.app")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="越境EC価格最適化AIの分析結果をXでシェアする"
+                                className="inline-flex items-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors min-h-[44px]"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                Xでシェア
+                            </a>
                         </div>
                     )}
                 </div>
