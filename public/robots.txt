@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+User-agent: Googlebot
+Allow: /
+
+Sitemap: https://ekkyo-ec-agent.vercel.app/sitemap.xml
