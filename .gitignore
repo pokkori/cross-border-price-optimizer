@@ -32,3 +32,6 @@ live_mercari.html
 .vercel
 .claude/
 push-to-github.cmd
+
+# personal slm
+personal-slm/.venv/

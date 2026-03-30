@@ -115,6 +115,11 @@ npx tsc --noEmit
 └── .env.example             # 環境変数テンプレート
 ```
 
+## 個人用SLM（ローカル運用）
+
+自由度の高い個人向けSLMを別ディレクトリで用意しています。  
+`personal-slm/README.md` を参照してください（Ollama + FastAPI + ローカルRAG）。
+
 ## データベーススキーマ
 
 `schema.sql` に全テーブル定義が含まれています。主要テーブル:

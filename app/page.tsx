@@ -22,9 +22,21 @@ export default function Home() {
   const shareUrl = encodeURIComponent("https://ekkyo-ec-agent.vercel.app");
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
+    <main className="min-h-screen text-white" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(34, 211, 238, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(8, 145, 178, 0.06) 0%, transparent 50%), #0A0A15' }}>
+      {/* Floating particles */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        {[
+          { size: 4, x: '12%', y: '22%', dur: '7s', delay: '0s', color: 'rgba(6,182,212,0.3)' },
+          { size: 3, x: '82%', y: '12%', dur: '9s', delay: '1s', color: 'rgba(34,211,238,0.2)' },
+          { size: 5, x: '68%', y: '58%', dur: '8s', delay: '2s', color: 'rgba(8,145,178,0.25)' },
+          { size: 3, x: '28%', y: '72%', dur: '6s', delay: '0.5s', color: 'rgba(6,182,212,0.2)' },
+          { size: 4, x: '48%', y: '38%', dur: '10s', delay: '3s', color: 'rgba(34,211,238,0.15)' },
+        ].map((p, i) => (
+          <div key={i} className="absolute rounded-full animate-pulse" style={{ width: p.size, height: p.size, left: p.x, top: p.y, background: p.color, animationDuration: p.dur, animationDelay: p.delay }} />
+        ))}
+      </div>
       {/* Hero */}
-      <section className="pt-20 pb-16 px-4 text-center">
+      <section className="pt-20 pb-16 px-4 text-center relative z-10">
         <div
           className="inline-block backdrop-blur-sm bg-blue-900/40 border border-blue-500/30 text-blue-300 text-xs font-bold px-3 py-1 rounded-full mb-6"
           aria-label="AI越境EC価格最適化エージェントのサービス紹介"
@@ -32,9 +44,9 @@ export default function Home() {
           AI越境EC価格最適化エージェント
         </div>
         <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight">
-          国内で仕入れ、<span className="text-cyan-400">海外で売る。</span>
+          <span style={{ background: 'linear-gradient(135deg, #FFFFFF, #E0F2FE)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>国内で仕入れ、</span><span style={{ background: 'linear-gradient(135deg, #22D3EE, #06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>海外で売る。</span>
           <br />
-          AI価格最適化エージェント
+          <span style={{ background: 'linear-gradient(135deg, #FFFFFF, #CFFAFE)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AI価格最適化エージェント</span>
         </h1>
         <p className="text-gray-300 text-lg max-w-2xl mx-auto mb-8">
           メルカリ・ヤフオク・楽天市場の最安値を自動検索し、eBay・Amazon・StockXでの売却価格と利益をAIが自動計算。
@@ -62,7 +74,8 @@ export default function Home() {
           <button
             onClick={startCheckout}
             disabled={loading}
-            className="bg-cyan-500 hover:bg-cyan-400 text-black font-black text-lg px-10 py-4 rounded-xl transition disabled:opacity-60 min-h-[44px]"
+            className="text-black font-black text-lg px-10 py-4 rounded-xl transition-all hover:scale-105 disabled:opacity-60 min-h-[44px]"
+            style={{ background: 'linear-gradient(135deg, #22D3EE, #06B6D4)', boxShadow: '0 0 30px rgba(6,182,212,0.4)' }}
             aria-label="越境EC価格最適化エージェントを月額4,980円で始める"
           >
             {loading ? "処理中..." : "¥4,980/月で始める →"}
@@ -79,7 +92,7 @@ export default function Home() {
       </section>
 
       {/* Pain Points */}
-      <section className="bg-gray-900 py-16 px-4" aria-labelledby="pain-points-heading">
+      <section className="py-16 px-4 relative z-10" style={{ background: 'rgba(255,255,255,0.02)' }} aria-labelledby="pain-points-heading">
         <div className="max-w-4xl mx-auto">
           <h2 id="pain-points-heading" className="text-2xl font-bold text-center mb-10">
             越境EC転売で「こんな悩みありませんか？」
@@ -131,7 +144,7 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section className="bg-gray-950 py-16 px-4" aria-labelledby="features-heading">
+      <section className="py-16 px-4 relative z-10" aria-labelledby="features-heading">
         <div className="max-w-4xl mx-auto">
           <h2 id="features-heading" className="text-2xl font-bold text-center mb-10">主な機能</h2>
           <div className="grid md:grid-cols-2 gap-6" role="list" aria-label="サービスの主な機能一覧">
@@ -201,7 +214,7 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section className="bg-gray-900 py-16 px-4 text-center" aria-labelledby="pricing-heading">
+      <section className="py-16 px-4 text-center relative z-10" style={{ background: 'rgba(255,255,255,0.02)' }} aria-labelledby="pricing-heading">
         <div className="max-w-sm mx-auto">
           <h2 id="pricing-heading" className="text-2xl font-bold mb-8">料金</h2>
           <div className="backdrop-blur-sm bg-blue-900/40 border-2 border-cyan-500 shadow-xl shadow-cyan-500/20 rounded-2xl p-8">
@@ -218,7 +231,8 @@ export default function Home() {
             <button
               onClick={startCheckout}
               disabled={loading}
-              className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-black text-lg py-4 rounded-xl transition disabled:opacity-60 min-h-[44px]"
+              className="w-full text-black font-black text-lg py-4 rounded-xl transition-all hover:scale-105 disabled:opacity-60 min-h-[44px]"
+            style={{ background: 'linear-gradient(135deg, #22D3EE, #06B6D4)', boxShadow: '0 0 20px rgba(6,182,212,0.3)' }}
               aria-label="越境EC価格最適化エージェントのプロプランを今すぐ始める"
             >
               {loading ? "処理中..." : "今すぐ始める →"}
@@ -228,7 +242,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-gray-950 py-16 px-4" aria-labelledby="testimonials-heading">
+      <section className="py-16 px-4 relative z-10" aria-labelledby="testimonials-heading">
         <div className="max-w-4xl mx-auto">
           <h2 id="testimonials-heading" className="text-2xl font-bold text-center mb-10">利用者の声</h2>
           <div className="grid md:grid-cols-3 gap-6" role="list" aria-label="利用者の声一覧">
@@ -261,7 +275,7 @@ export default function Home() {
       </section>
 
       {/* Share Section */}
-      <section className="bg-gray-900 py-12 px-4 text-center" aria-labelledby="share-heading">
+      <section className="py-12 px-4 text-center relative z-10" style={{ background: 'rgba(255,255,255,0.02)' }} aria-labelledby="share-heading">
         <div className="max-w-md mx-auto">
           <h2 id="share-heading" className="text-lg font-bold mb-4 text-gray-300">友人・知人にシェアする</h2>
           <a
