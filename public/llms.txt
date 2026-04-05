@@ -1,12 +1,27 @@
 # 越境EC価格最適化エージェント
-メルカリ×eBay・Amazon間の利益計算と価格最適化を自動化し、月¥10万の越境EC副業を実現するAIエージェント
+> 越境ECの商品価格を多市場で自動最適化するAIエージェント
 
 ## サービス概要
-- 対象ユーザー: 越境ECに挑戦したい副業者・メルカリ・ヤフオクからeBay・Amazonへの転売を検討している方
-- 主な機能: メルカリ・ヤフオク・楽天（国内）とeBay・Amazon・StockX（海外）を一括比較、送料・関税・手数料の自動計算、利益シミュレーター
-- 料金: 月額¥4,980
-- URL: https://ekkyo-ec-agent.vercel.app
+- **カテゴリ**: EC・販売
+- **URL**: https://cross-border-price-optimizer.vercel.app
+- **提供形態**: Webブラウザで利用可能（登録不要で試せます）
+- **開発**: Claude Code + Next.js 16 + Vercel
 
-## 主要FAQ
-Q: 越境EC価格最適化エージェントでどのように利益を計算できますか？
-A: 国内仕入れ価格を入力するだけで、eBay・Amazon・StockXでの販売価格から送料・関税・プラットフォーム手数料・為替レートを自動計算し、純利益と利益率を即時シミュレートします。月¥10万の副業収入を目指す方向けに最適な出品先と価格を提案。月額¥4,980でご利用いただけます。
+## 主要ページ
+- [トップページ](https://cross-border-price-optimizer.vercel.app/): メイン機能・サービス説明
+- [ツール](https://cross-border-price-optimizer.vercel.app/tool): AI機能の利用画面（一部サービス）
+- [プライバシーポリシー](https://cross-border-price-optimizer.vercel.app/privacy): 個人情報の取り扱い
+- [特定商取引法に基づく表記](https://cross-border-price-optimizer.vercel.app/legal): 法的情報
+
+## 利用シーン
+越境ECの商品価格を多市場で自動最適化するAIエージェント
+
+## 技術スタック
+- フロントエンド: Next.js 16, React 19, TypeScript, Tailwind CSS
+- AI: Claude claude-sonnet-4-6 (Anthropic)
+- バックエンド: Vercel Edge Functions, Supabase
+- 決済: KOMOJU（クレジットカード・コンビニ払い対応）
+
+## robots.txt
+AIクローラーによるインデックスを歓迎します。
+GPTBot, ClaudeBot, PerplexityBot, Googlebot-Extended のアクセスを許可しています。
